@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Export-Package: osgi.bundle.control.bundle;uses:="javax.servlet,org.op
+ s4j.pax.web.service,org.osgi.service.http,javax.servlet.http"
+Built-By: Cedric
+Build-Jdk: 1.7.0_01
+Bundle-Version: 1.0.0
+Tool: Bnd-1.15.0
+Bundle-Name: Control GUI OSGi Bundle
+Bnd-LastModified: 1339684777003
+Created-By: Apache Maven Bundle Plugin
+Bundle-ManifestVersion: 2
+Bundle-SymbolicName: Map.Telec.bundle
+Import-Package: javax.servlet;version="[2.5,3)",javax.servlet.http;ver
+ sion="[2.5,3)",org.ops4j.pax.web.service;version="[2.0,3)",org.osgi.s
+ ervice.http;version="[1.2,2)"
+
