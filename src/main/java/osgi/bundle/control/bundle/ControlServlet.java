@@ -1,13 +1,13 @@
 package osgi.bundle.control.bundle;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.Date;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -30,8 +30,8 @@ public class ControlServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         //TODO replace and put your code here
         PrintWriter out = resp.getWriter();
-        out.println("<h1>Hey Dude !!!</h1>");
-     
+        resp.setContentType("text/html");
+        out.write("<a href=\"./html/index.xhtml\">ici</a>");
     }
 
     @Validate
@@ -48,7 +48,7 @@ public class ControlServlet extends HttpServlet {
                 //register JSP
                 //webContainer.registerJsps(new String[]{"/jsp/*"}, httpContext);
                 // register html pages as resources
-                //webContainer.registerResources("/html", "/", httpContext);
+                webContainer.registerResources("/html", "/", httpContext);
                 DEBUG("HTTP Web controler started");
             } catch (ServletException ex) {
                 Logger.getLogger(ControlServlet.class.getName()).log(Level.SEVERE, null, ex);
@@ -79,10 +79,7 @@ public class ControlServlet extends HttpServlet {
         this.webContainer = null;
         DEBUG("WebContainer services unsubscribe");
     }
-    
-    
     private static final long serialVersionUID = -7578840142400570555L;
-    
     //*******************************
     //Debug functions
     //Todo adding trace file with
