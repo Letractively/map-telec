@@ -18,7 +18,8 @@
         <dependency>
             <groupId>org.ops4j.pax.web</groupId>
             <artifactId>pax-web-jetty-bundle</artifactId>
-            <version>2.0.0</version>
+           <version>1.0.2</version>    <!-- For Knopflerfish-->
+            <!--<version>2.0.0</version>--> <!-- For Felix -->
             <scope>provided</scope>
         </dependency>
         <dependency>
