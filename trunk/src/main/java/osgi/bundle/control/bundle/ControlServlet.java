@@ -31,7 +31,31 @@ public class ControlServlet extends HttpServlet {
         //TODO replace and put your code here
         PrintWriter out = resp.getWriter();
         resp.setContentType("text/html");
-        out.write("<a href=\"./html/index.xhtml\">ici</a>");
+        out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"+
+        "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"+
+        "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"fr\">"+
+               " <head>"+
+                       " <title>Interface_SVG</title>"+
+                       " <meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml\" />"+
+                       " <meta name=\"viewport\" content=\"width=device-width\"/>" +
+                       " <link rel=\"stylesheet\" href=\"html/style_svg.css\"></link>"+
+                       " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/COMET_SVG_utilities.js\"></script>"+
+                       " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/jquery-1.7.2.js\"></script>"+
+                       " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/interface.js\"></script>"+
+                       
+               " </head>"+
+                "<body onload=\"init_every()\">"+
+                "<svg id=\"mon_canvas\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"  version=\"1.1\">"+
+                "<defs id='def'/>"+
+                "<g id=\"main\">"+
+                       " <g id=\"users\"/>"+
+                        "<g id=\"debarras\"/>"+
+                        "<g id=\"cloud\"/>"+
+                       " <g id=\"plan\"/>"+
+               " </g>"+
+                "</svg>"+
+                "</body>"+
+       " </html>");
     }
 
     @Validate
