@@ -1,32 +1,4 @@
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
-function init_every() {
-    /*if(navigator.appName!="Opera"){
-				document.body.innerHTML = "Veuillez t&eacute;l&eacute;charger Opera";
-			}
-			else{*/
-    init_draggable();
-				
-    var userContainer = new Container('users',true,window.innerWidth/2-window.innerWidth/120,window.innerHeight/2-window.innerHeight/60,'translate(0,0)');
-    var user_list = init_users();
-				
-    debarrasContainer = new Container('debarras',true,window.innerWidth/2-window.innerWidth/120,window.innerHeight/2-window.innerHeight/60,'translate(0,'+62*window.innerHeight/120+')');
-    var devices_list = init_devices();
-    debarrasContainer.setDropZone(devices_list);
-
-    var mapContainer = new Container('plan',false,window.innerWidth/2-window.innerWidth/120,4*window.innerHeight/5-window.innerHeight/60,'translate('+122*window.innerWidth/240+','+65*window.innerHeight/300+')');
-    mapContainer.setDropZone();
-				
-    var cloudContainer = new Container('cloud',false,window.innerWidth/2-window.innerWidth/120,window.innerHeight/5-window.innerHeight/60,'translate('+122*window.innerWidth/240+',0)');
-				
-    var sepNSO = new Separator('separatornordsudouest', document.getElementById('main'),  'horizontal', [document.getElementById(userContainer.id)],  [document.getElementById(debarrasContainer.id)], document.getElementById(userContainer.id));
-    var sepEO = new Separator('separatorestouest', document.getElementById('main'),  'vertical', [document.getElementById(userContainer.id),document.getElementById(debarrasContainer.id)],  [document.getElementById(cloudContainer.id),document.getElementById(mapContainer.id)], document.getElementById('main'));
-    var sepNSE = new Separator('separatornordsudest', document.getElementById('main'),  'horizontal', [document.getElementById(cloudContainer.id)],  [document.getElementById(mapContainer.id)], document.getElementById(cloudContainer.id));
-//}				
-}
-
-
-
-//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function Separator( id, root_node, orientation, gr_node1, gr_node2, taille_ref){
     var svgNS = "http://www.w3.org/2000/svg";
     var g = document.createElementNS(svgNS,'g');
@@ -271,7 +243,7 @@ function Scrollbar( id, root_node, orientation, scroll_node){
 
 
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
-function Container(	id, b_scrollbar, width, height, transform){
+function Container(id, b_scrollbar, width, height, transform){
     this.id = id;
     this.b_scrollbar = b_scrollbar;
     this.width = width;
@@ -341,6 +313,9 @@ function Container(	id, b_scrollbar, width, height, transform){
                 }
             }
             );
+       this.add = function(n){
+           document.getElementById(id+'children').appendChild(n);
+       }
     }
 }
 
@@ -523,7 +498,28 @@ function User(user, img, devices, name){
             );
     }
 }
-			
+
+function getXMLHttpRequest() {
+	var xhr = null;
+	
+	if (window.XMLHttpRequest || window.ActiveXObject) {
+		if (window.ActiveXObject) {
+			try {
+				xhr = new ActiveXObject("Msxml2.XMLHTTP");
+			} catch(e) {
+				xhr = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+		} else {
+			xhr = new XMLHttpRequest(); 
+		}
+	} else {
+		alert("Votre navigateur ne supporte pas l'objet XMLHTTPRequest...");
+		return null;
+	}
+	
+	return xhr;
+}
+
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function startDragElement(n,e){
     var MAm = document.getElementById('main').getCTM().inverse();
@@ -541,6 +537,11 @@ function startDragElement(n,e){
     n.style.opacity = "0.5";
     n.parentNode.removeChild(n);
     document.getElementById('main').appendChild(n);
+    //POST
+    var xhr = getXMLHttpRequest();
+    xhr.open("POST", "index.xhtml", true);
+    xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
+    xhr.send("var1=valeur1&var2=valeur2");
 }
 			
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
@@ -569,57 +570,4 @@ function endDragOnUser(z,n,e){
         + ')';
         n_devices.setAttribute('transform', str_mtx);
     }
-}
-						
-//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
-function init_users(){
-    var u1 = new User("user1","html/img/user1.png",null, 'user1');
-    document.getElementById('userschildren').appendChild(u1.node);
-    u1.setDropZone(new List(document.getElementById(u1.node.id),0,'horizontal'));
-    var u2 = new User("user2","html/img/user2.png",null, 'user2');
-    document.getElementById('userschildren').appendChild(u2.node);
-    u2.setDropZone(new List(document.getElementById(u2.node.id),0,'horizontal'));
-    var u3 = new User("user3","html/img/user3.png",null, 'user3');
-    document.getElementById('userschildren').appendChild(u3.node);
-    u3.setDropZone(new List(document.getElementById(u3.node.id),10,'horizontal'));
-    var u4 = new User("user4","html/img/user4.png",null, 'user4');
-    document.getElementById('userschildren').appendChild(u4.node);
-    u4.setDropZone(new List(document.getElementById(u4.node.id),10,'horizontal'));
-    var u5 = new User("user5","html/img/user5.png",null, 'user5');
-    document.getElementById('userschildren').appendChild(u5.node);
-    u5.setDropZone(new List(document.getElementById(u5.node.id),10,'horizontal'));
-    var l = new List(document.getElementById('userschildren'),20,'vertical');
-    l.add(u1.node);
-    l.add(u2.node);
-    l.add(u3.node);
-    l.add(u4.node);
-    l.add(u5.node);
-    return l;
-}
-
-//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
-function init_devices(){
-    var d1 = new Device("device1","html/img/device1.png");
-    document.getElementById('debarraschildren').appendChild(d1);
-    Draggable(d1.id,[d1.id], startDragElement, null,  null);
-    var d2 = new Device("device2","html/img/device2.png");
-    document.getElementById('debarraschildren').appendChild(d2);
-    Draggable(d2.id,[d2.id], startDragElement, null,  null);
-    var d3 = new Device("device3","html/img/device3.png");
-    document.getElementById('debarraschildren').appendChild(d3);
-    Draggable(d3.id,[d3.id], startDragElement, null,  null);
-    var d4 = new Device("device4","html/img/device4.png");
-    document.getElementById('debarraschildren').appendChild(d4);
-    Draggable(d4.id,[d4.id], startDragElement, null,  null);
-    var d5 = new Device("device5","html/img/device5.png");
-    document.getElementById('debarraschildren').appendChild(d5);
-    Draggable(d5.id,[d5.id], startDragElement, null,  null);
-    var l = new List(document.getElementById('debarraschildren'),20,'vertical');
-    l.add(d1);
-    l.add(d2);
-    l.add(d3);
-    l.add(d4);
-    l.add(d5);
-    return l;
-
 }

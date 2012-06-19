@@ -1,13 +1,13 @@
 package osgi.bundle.control.bundle;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Date;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -29,6 +29,12 @@ public class ControlServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         //TODO replace and put your code here
+        DataTelec d = new DataTelec();
+        d.addUser(new User("user1", "img/user1.png"));
+        d.addUser(new User("user2", "img/user2.png"));
+        d.addMap(new Device("device2", "img/device2.png", 50, 50));
+        d.addDevice(new Device("device1", "img/device1.png"));
+        
         PrintWriter out = resp.getWriter();
         resp.setContentType("text/html");
         out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"+
@@ -42,7 +48,7 @@ public class ControlServlet extends HttpServlet {
                        " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/COMET_SVG_utilities.js\"></script>"+
                        " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/jquery-1.7.2.js\"></script>"+
                        " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/interface.js\"></script>"+
-                       
+                       " <script language=\"JavaScript\" type=\"text/javascript\">"+d.toString()+"</script>"+
                " </head>"+
                 "<body onload=\"init_every()\">"+
                 "<svg id=\"mon_canvas\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"  version=\"1.1\">"+
@@ -58,6 +64,18 @@ public class ControlServlet extends HttpServlet {
        " </html>");
     }
 
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        System.out.println(req.getParameterMap().toString());
+        if(!req.getParameterMap().isEmpty()){
+            PrintWriter out = resp.getWriter();
+            resp.setContentType("text/html");
+            out.write("trololo");
+        }
+    }
+
+    
+    
     @Validate
     public void start() {
         DEBUG("HTTP Web controler starting");
