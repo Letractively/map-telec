@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.util.Date;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
@@ -25,15 +26,11 @@ import org.osgi.service.http.NamespaceException;
 public class ControlServlet extends HttpServlet {
 
     WebContainer webContainer;
+    DataTelec data;
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         //TODO replace and put your code here
-        DataTelec d = new DataTelec();
-        d.addUser(new User("user1", "img/user1.png"));
-        d.addUser(new User("user2", "img/user2.png"));
-        d.addMap(new Device("device2", "img/device2.png", 50, 50));
-        d.addDevice(new Device("device1", "img/device1.png"));
         
         PrintWriter out = resp.getWriter();
         resp.setContentType("text/html");
@@ -48,7 +45,7 @@ public class ControlServlet extends HttpServlet {
                        " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/COMET_SVG_utilities.js\"></script>"+
                        " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/jquery-1.7.2.js\"></script>"+
                        " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/interface.js\"></script>"+
-                       " <script language=\"JavaScript\" type=\"text/javascript\">"+d.toString()+"</script>"+
+                       " <script language=\"JavaScript\" type=\"text/javascript\">"+data.toString()+"</script>"+
                " </head>"+
                 "<body onload=\"init_every()\">"+
                 "<svg id=\"mon_canvas\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"  version=\"1.1\">"+
@@ -62,15 +59,35 @@ public class ControlServlet extends HttpServlet {
                 "</svg>"+
                 "</body>"+
        " </html>");
+        out.close();
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        System.out.println(req.getParameterMap().toString());
         if(!req.getParameterMap().isEmpty()){
+            if(req.getParameter("device") != null){
+                if(req.getParameter("user") != null){
+                    System.out.println(req.getParameter("device")+" on "+req.getParameter("user"));
+                    data.removeUserDevice(new Device(req.getParameter("device"), "img/"+req.getParameter("device")+".png"));
+                    data.add(new Device(req.getParameter("device"), "img/"+req.getParameter("device")+".png"),new User(req.getParameter("user"), "ing/"+req.getParameter("user")+".png"));
+                    data.removeMap(new Device(req.getParameter("device"), "img/"+req.getParameter("device")+".png"));
+                    data.removeDevice(new Device(req.getParameter("device"), "img/"+req.getParameter("device")+".png"));
+                }else{
+                    System.out.println(req.getParameter("device")+" drop in the list");
+                    data.addDevice(new Device(req.getParameter("device"), "img/"+req.getParameter("device")+".png"));
+                    data.removeMap(new Device(req.getParameter("device"), "img/"+req.getParameter("device")+".png"));
+                    data.removeUserDevice(new Device(req.getParameter("device"), "img/"+req.getParameter("device")+".png"));
+                }
+            }else{
+                System.out.println(req.getParameter("map")+" on map at ("+req.getParameter("x")+","+req.getParameter("y")+")");
+                data.addMap(new Device(req.getParameter("map"), "img/"+req.getParameter("map")+".png", Float.valueOf(req.getParameter("x")), Float.valueOf(req.getParameter("y"))));
+                data.removeDevice(new Device(req.getParameter("map"), "img/"+req.getParameter("map")+".png"));
+                data.removeUserDevice(new Device(req.getParameter("map"), "img/"+req.getParameter("map")+".png"));
+            }
             PrintWriter out = resp.getWriter();
             resp.setContentType("text/html");
             out.write("trololo");
+            out.close();
         }
     }
 
@@ -78,6 +95,18 @@ public class ControlServlet extends HttpServlet {
     
     @Validate
     public void start() {
+        data = new DataTelec();
+        User u = new User("user1", "img/user1.png");
+        u.addDevice(new Device("device3", "img/device3.png"));
+        data.addUser(u);
+        data.addUser(new User("user2", "img/user2.png"));
+        data.addUser(new User("user3", "img/user3.png"));
+        data.addUser(new User("user4", "img/user4.png"));
+        data.addUser(new User("user5", "img/user5.png"));
+        data.addMap(new Device("device2", "img/device2.png", 50, 50));
+        data.addDevice(new Device("device1", "img/device1.png"));
+        data.addDevice(new Device("device4", "img/device4.png"));
+        data.addDevice(new Device("device5", "img/device5.png"));
         DEBUG("HTTP Web controler starting");
         if (webContainer != null) {
             try {
