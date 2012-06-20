@@ -1,4 +1,27 @@
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+function getXMLHttpRequest() {
+	var xhr = null;
+	
+	if (window.XMLHttpRequest || window.ActiveXObject) {
+		if (window.ActiveXObject) {
+			try {
+				xhr = new ActiveXObject("Msxml2.XMLHTTP");
+			} catch(e) {
+				xhr = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+		} else {
+			xhr = new XMLHttpRequest(); 
+		}
+	} else {
+		alert("Votre navigateur ne supporte pas l'objet XMLHTTPRequest...");
+		return null;
+	}
+	
+	return xhr;
+}
+
+
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function Separator( id, root_node, orientation, gr_node1, gr_node2, taille_ref){
     var svgNS = "http://www.w3.org/2000/svg";
     var g = document.createElementNS(svgNS,'g');
@@ -309,7 +332,20 @@ function Container(id, b_scrollbar, width, height, transform){
                     n.setAttribute('transform',str_mtx);
                     n.parentNode.removeChild(n);
                     document.getElementById(id+'children').appendChild(n);
-                    if(list!=undefined) list.add(n);
+                    if(list!=undefined){
+                        list.add(n);
+                        //POST
+                        var xhr = getXMLHttpRequest();
+                        xhr.open("POST", "index.xhtml", true);
+                        xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
+                        xhr.send("device="+n.getAttribute('id')+"&action=drop");
+                    }
+                    else{
+                        var xhr = getXMLHttpRequest();
+                        xhr.open("POST", "index.xhtml", true);
+                        xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
+                        xhr.send("map="+n.getAttribute('id')+"&x="+MAB.e+"&y="+MAB.f);
+                    }
                 }
             }
             );
@@ -447,6 +483,7 @@ function User(user, img, devices, name){
     var xlinkNS = "http://www.w3.org/1999/xlink";
     var width = 64;
     var height = 64;
+    this.devices = devices;
     var g = document.createElementNS(svgNS,"g");
     g.setAttribute("id",user);
     g.setAttribute("gdevices", user + "_devices");
@@ -479,6 +516,14 @@ function User(user, img, devices, name){
     g.appendChild(gD);
     this.node = g;
     this.setDropZone = function(list){
+        var i;
+        for(i=0; i<this.devices.length;i++){
+            console.log(this.devices[i]);
+            document.getElementById(this.node.getAttribute('id')+'_devices').appendChild(this.devices[i]);
+            Draggable(this.devices[i].id,[this.devices[i].id], startDragElement, null,  null);
+            list.add(this.devices[i]);
+        }
+        console.log(list);
         Drop_zone(this.node.id, '*', 
             function(z, n, e) {
                 if(list!=undefined && list.indexOf(n) != -1)
@@ -492,32 +537,19 @@ function User(user, img, devices, name){
                     endDrageElement(n);
                     n.parentNode.removeChild(n);
                     document.getElementById(z.getAttribute('gdevices')).appendChild(n);
-                    if(list!=undefined) list.add(n);
+                    if(list!=undefined){
+                        list.add(n);
+                        console.log(list);
+                        //POST
+                        var xhr = getXMLHttpRequest();
+                        xhr.open("POST", "index.xhtml", true);
+                        xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
+                        xhr.send("user="+z.getAttribute('id')+"&device="+n.getAttribute('id'));
+                    } 
                 }
             }
             );
     }
-}
-
-function getXMLHttpRequest() {
-	var xhr = null;
-	
-	if (window.XMLHttpRequest || window.ActiveXObject) {
-		if (window.ActiveXObject) {
-			try {
-				xhr = new ActiveXObject("Msxml2.XMLHTTP");
-			} catch(e) {
-				xhr = new ActiveXObject("Microsoft.XMLHTTP");
-			}
-		} else {
-			xhr = new XMLHttpRequest(); 
-		}
-	} else {
-		alert("Votre navigateur ne supporte pas l'objet XMLHTTPRequest...");
-		return null;
-	}
-	
-	return xhr;
 }
 
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
@@ -537,11 +569,6 @@ function startDragElement(n,e){
     n.style.opacity = "0.5";
     n.parentNode.removeChild(n);
     document.getElementById('main').appendChild(n);
-    //POST
-    var xhr = getXMLHttpRequest();
-    xhr.open("POST", "index.xhtml", true);
-    xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
-    xhr.send("var1=valeur1&var2=valeur2");
 }
 			
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________

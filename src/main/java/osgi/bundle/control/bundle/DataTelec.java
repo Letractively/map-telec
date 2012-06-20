@@ -32,8 +32,12 @@ public class DataTelec {
     }
     
     public void addMap(Device d){
-        if(!map.contains(d))
+        if(!map.contains(d)){
             map.add(d);
+        }else{
+            map.get(map.indexOf(d)).setX(d.getX());
+            map.get(map.indexOf(d)).setY(d.getY());
+        }
     }
     
     public void removeUser(User u){
@@ -42,6 +46,10 @@ public class DataTelec {
     
     public void removeDevice(Device d){
         devices.remove(d);
+    }
+    
+    public void removeMap(Device d){
+        map.remove(d);
     }
     
     public ArrayList<Device> getDevices() {
@@ -106,6 +114,16 @@ public class DataTelec {
     @Override
     public String toString() {
         return initUsers()+initDevices()+init();
+    }
+
+    void add(Device device, User user) {
+        users.get(users.indexOf(user)).addDevice(device);        
+    }
+
+    void removeUserDevice(Device device) {
+        for(User u : users){
+            u.removeDevice(device);
+        }
     }
     
     

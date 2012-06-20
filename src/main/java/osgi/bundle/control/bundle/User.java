@@ -30,6 +30,15 @@ class User {
         devices = new ArrayList<Device>();
     }
 
+    public void addDevice(Device d){
+        if(!devices.contains(d))
+            devices.add(d);
+    }
+    
+    public void removeDevice(Device d){
+        devices.remove(d);
+    }
+    
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
@@ -47,7 +56,12 @@ class User {
 
     @Override
     public String toString() {
-        return "var u1 = new User('"+id+"','html/"+img+"',null, '"+name+"');"+
+        String tab = "var devices = new Array();";
+        for(Device d : devices){
+            tab += "var d = new Device('"+d.getId()+"','html/"+d.getImg()+"');"
+                    + "devices.push(d);";
+        }
+        return tab +"var u1 = new User('"+id+"','html/"+img+"',devices, '"+name+"');"+
         "document.getElementById('userschildren').appendChild(u1.node);"+
         "u1.setDropZone(new List(document.getElementById(u1.node.id),0,'horizontal'));"+
         "l.add(u1.node);";
