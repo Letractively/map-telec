@@ -14,11 +14,11 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <dependencies>
+    <dependencies> 
         <dependency>
             <groupId>org.ops4j.pax.web</groupId>
             <artifactId>pax-web-jetty-bundle</artifactId>
-           <version>1.0.2</version>    <!-- For Knopflerfish-->
+            <version>1.0.2</version>    <!-- For Knopflerfish-->
             <!--<version>2.0.0</version>--> <!-- For Felix -->
             <scope>provided</scope>
         </dependency>
@@ -27,8 +27,20 @@
             <artifactId>org.apache.felix.ipojo.annotations</artifactId>
             <version>1.8.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.codehaus.jettison</groupId>
+            <artifactId>jettison</artifactId>
+            <version>1.2</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>stax</groupId>
+                    <artifactId>stax-api</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
-
+    
     <build>
         <resources>
             <resource>

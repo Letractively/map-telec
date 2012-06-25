@@ -1,49 +1,14 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="fr">
-	<head>
-		<title>Interface_SVG</title>
-		<meta http-equiv="Content-Type" content="application/xhtml+xml" />
-		<meta name="viewport" content="width=device-width"/>
-		<link rel="stylesheet" href="style_svg.css" />
-		<script language="JavaScript" type="text/javascript" src="COMET_SVG_utilities.js"></script>
-		<script language="JavaScript" type="text/javascript" src="jquery-1.7.2.js"/>
-		<script language="JavaScript" type="text/javascript" src="script_svg.js"/>
-		<script language="JavaScript" type="text/javascript" src="interface.js"/>
-		<script language="JavaScript" type="text/javascript">		
-//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
-		function init_every() {
-			/*if(navigator.appName!="Opera"){
-				document.body.innerHTML = "Veuillez t&eacute;l&eacute;charger Opera";
-			}
-			else{*/
-				init_draggable();
-				
-				var userContainer = new Container('users',true,window.innerWidth/2-window.innerWidth/120,window.innerHeight/2-window.innerHeight/60,'translate(0,0)');
-				var user_list = init_users();
-				
-				debarrasContainer = new Container('debarras',true,window.innerWidth/2-window.innerWidth/120,window.innerHeight/2-window.innerHeight/60,'translate(0,'+62*window.innerHeight/120+')');
-				var devices_list = init_devices();
-				debarrasContainer.setDropZone(devices_list);
-
-				var mapContainer = new Container('plan',false,window.innerWidth/2-window.innerWidth/120,window.innerHeight,'translate('+122*window.innerWidth/240+',0)');
-				mapContainer.setDropZone();
-				
-				var sepNS = new Separator('separatornordsud', document.getElementById('main'),  'horizontal', [document.getElementById(userContainer.id)],  [document.getElementById(debarrasContainer.id)], document.getElementById(userContainer.id));
-				var sepEO = new Separator('separatorestouest', document.getElementById('main'),  'vertical', [document.getElementById(userContainer.id),document.getElementById(debarrasContainer.id)],  [document.getElementById(mapContainer.id)], document.getElementById(mapContainer.id));
-				//}				
-			}
-	  </script>
-	</head>
-	<body onload="init_every();">
-	<svg id="mon_canvas" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  version="1.1">
-	<defs id='def'/>
-	<g id="main">
-		<g id="users"/>
-		<g id="debarras"/>
-		<g id="cloud"/>
-		<g id="plan"/>
-	</g>
-	</svg>
-	</body>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title>HTTP Polling</title>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+    <script type="text/javascript" src="http://jquery-json.googlecode.com/files/jquery.json-2.2.min.js"></script>
+    <script type="text/javascript" scr="html/test.js"></script>
+</head>
+<body>
+<div id="logs" style="font-family: monospace;">
+</div>
+</body>
 </html>
