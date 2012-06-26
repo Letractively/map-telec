@@ -1,23 +1,81 @@
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function getXMLHttpRequest() {
-	var xhr = null;
+    var xhr = null;
 	
-	if (window.XMLHttpRequest || window.ActiveXObject) {
-		if (window.ActiveXObject) {
-			try {
-				xhr = new ActiveXObject("Msxml2.XMLHTTP");
-			} catch(e) {
-				xhr = new ActiveXObject("Microsoft.XMLHTTP");
-			}
-		} else {
-			xhr = new XMLHttpRequest(); 
-		}
-	} else {
-		alert("Votre navigateur ne supporte pas l'objet XMLHTTPRequest...");
-		return null;
-	}
+    if (window.XMLHttpRequest || window.ActiveXObject) {
+        if (window.ActiveXObject) {
+            try {
+                xhr = new ActiveXObject("Msxml2.XMLHTTP");
+            } catch(e) {
+                xhr = new ActiveXObject("Microsoft.XMLHTTP");
+            }
+        } else {
+            xhr = new XMLHttpRequest(); 
+        }
+    } else {
+        alert("Votre navigateur ne supporte pas l'objet XMLHTTPRequest...");
+        return null;
+    }
 	
-	return xhr;
+    return xhr;
+}
+
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+function removeDevice(device, user_list){
+    for(var i=0;i<user_list.lenght;i++){
+        for(var j=0;j<user_list[i].list.lenght;j++){
+            if(user_list[i].list[j].id == device){
+                //TODO: REMOVE DEVICE
+            }
+        }
+    }
+}
+
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+function updateMap(resp, user_list, device_list){
+    document.getElementById('text_tmp').removeChild(document.getElementById('text_tmp').childNodes[0]);
+    document.getElementById('text_tmp').appendChild(document.createTextNode(resp));
+    var c = resp[0];
+    var i = 1;
+    while(c != '/'){
+        c = resp[i];
+        i++;
+    }
+    if(resp[i] == 'l'){
+        console.log('LIST : '+resp.substring(0,i-1));
+        document.getElementById('debarraschildren').appendChild(document.getElementById(resp.substring(0,i-1)));
+        device_list.add(document.getElementById(resp.substring(0,i-1)));
+    }else if(resp[i] == 'u'){
+        console.log('USER : '+resp.substring(0,i-1)+'/'+resp.substring(i,resp.length)+' / '+user_list);
+        device_list.remove(document.getElementById(resp.substring(0,i-1)));
+        var user = user_list[0];
+        var j=0;
+        while(j<user_list.length && user.node.id != resp.substring(i,resp.length)){
+            i++;
+            user = user_list[i];
+        }
+        document.getElementById(user.node.getAttribute('gdevices')).appendChild(document.getElementById(resp.substring(0,i-1)));
+        user.list.add(document.getElementById(resp.substring(0,i-1)));
+        //user_list.get(resp.substring(i,resp.length)).getAttribute('gdevices')
+    }else{
+        console.log('MAP : '+resp.substring(0,i-1));
+        device_list.remove(document.getElementById(resp.substring(0,i-1)));
+        
+    }
+}
+
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+function getAjax(user_list, device_list){
+    var xhr = getXMLHttpRequest();
+    xhr.onreadystatechange=function(){
+        if (xhr.readyState==4 && xhr.status==200){
+            updateMap(xhr.responseText, user_list, device_list)
+            getAjax(user_list, device_list);
+        }
+    };
+    
+    xhr.open('POST','ajax',true);
+    xhr.send();
 }
 
 
@@ -333,7 +391,6 @@ function Container(id, b_scrollbar, width, height, transform){
                     n.parentNode.removeChild(n);
                     document.getElementById(id+'children').appendChild(n);
                     if(list!=undefined){
-                        list.add(n);
                         //POST
                         var xhr = getXMLHttpRequest();
                         xhr.open("POST", "index.xhtml", true);
@@ -349,9 +406,9 @@ function Container(id, b_scrollbar, width, height, transform){
                 }
             }
             );
-       this.add = function(n){
-           document.getElementById(id+'children').appendChild(n);
-       }
+        this.add = function(n){
+            document.getElementById(id+'children').appendChild(n);
+        }
     }
 }
 
@@ -410,21 +467,24 @@ function List(root_node, dec,orientation){
             var x = -(bbox_e.width+this.dec);
             str_trans = ' translate('+x+', 0)';
         }
-        for(i=this.indexOf(e);i<this.list.length-1;i++){
-            this.list[i] = this.list[i+1];
-            this.list[i].setAttribute('transform',this.list[i].getAttribute('transform')+str_trans);
-        }
-        var tmp = this.list.pop();
-        if(this.cadre != undefined){ 
-            this.cadre.setAttribute('width',this.cadre.parentNode.getBBox().width-tmp.getBBox().width-dec);
-            this.cadre.setAttribute('height',this.cadre.parentNode.getBBox().height);
-            if(this.list.length==0)	this.cadre.setAttribute('width','0');
-        }
-		
-        var scrollBar = document.getElementById('scrollbardraggable'+root_node.parentNode.id);
-        if(scrollBar != null){
-            var parent_rect = document.getElementById(root_node.parentNode.id+'rect');
-            scrollBar.setAttribute('height',parent_rect.getAttribute('height')*parent_rect.getAttribute('height')/root_node.getBBox().height);
+        var i = this.indexOf(e);
+        if(i!=-1){
+            for(i=this.indexOf(e);i<this.list.length-1;i++){
+                this.list[i] = this.list[i+1];
+                this.list[i].setAttribute('transform',this.list[i].getAttribute('transform')+str_trans);
+            }
+            var tmp = this.list.pop();
+            if(this.cadre != undefined){ 
+                this.cadre.setAttribute('width',this.cadre.parentNode.getBBox().width-tmp.getBBox().width-dec);
+                this.cadre.setAttribute('height',this.cadre.parentNode.getBBox().height);
+                if(this.list.length==0)	this.cadre.setAttribute('width','0');
+            }
+
+            var scrollBar = document.getElementById('scrollbardraggable'+root_node.parentNode.id);
+            if(scrollBar != null){
+                var parent_rect = document.getElementById(root_node.parentNode.id+'rect');
+                scrollBar.setAttribute('height',parent_rect.getAttribute('height')*parent_rect.getAttribute('height')/root_node.getBBox().height);
+            }
         }
     }
     //return the element with the id id
@@ -514,9 +574,11 @@ function User(user, img, devices, name){
 		 
     gD.appendChild(cadre);
     g.appendChild(gD);
+    this.list = undefined;
     this.node = g;
     this.setDropZone = function(list){
         var i;
+        this.list = list;
         for(i=0; i<this.devices.length;i++){
             console.log(this.devices[i]);
             document.getElementById(this.node.getAttribute('id')+'_devices').appendChild(this.devices[i]);
@@ -526,8 +588,8 @@ function User(user, img, devices, name){
         console.log(list);
         Drop_zone(this.node.id, '*', 
             function(z, n, e) {
-                if(list!=undefined && list.indexOf(n) != -1)
-                    list.remove(n);
+                //if(list!=undefined && list.indexOf(n) != -1)
+                  //  list.remove(n);
             }, 	function(z, n, e) {
             }, function(z, n, e) {
             }, function(z, n, e) {
@@ -538,8 +600,7 @@ function User(user, img, devices, name){
                     n.parentNode.removeChild(n);
                     document.getElementById(z.getAttribute('gdevices')).appendChild(n);
                     if(list!=undefined){
-                        list.add(n);
-                        console.log(list);
+                        //list.add(n);
                         //POST
                         var xhr = getXMLHttpRequest();
                         xhr.open("POST", "index.xhtml", true);

@@ -29,24 +29,25 @@ public class ControlServlet extends HttpServlet {
     WebContainer webContainer;
     private DataTelec data;
     private final Queue<Continuation> continuations = new ConcurrentLinkedQueue<Continuation>();
+    private String update = "";
     private final Thread generator = new Thread("Event generator") {
 
         @Override
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
-                    Thread.sleep(1000);//random.nextInt(5000));
-                    while (!continuations.isEmpty()) {
-                        Continuation continuation = continuations.poll();
-                        HttpServletResponse peer = (HttpServletResponse) continuation.getServletResponse();
-                        System.out.println(continuation.getAttribute("port") + new JSONArray().put("At " + new Date()).toString());
-                        peer.getWriter().write((new Date()).toString());//new JSONArray().put("At " + new Date()).toString());
-                        peer.setStatus(HttpServletResponse.SC_OK);
-                        peer.setContentType("text/html");
-                        continuation.complete();
+                    if(update!=""){
+                        while (!continuations.isEmpty()) {
+                            Continuation continuation = continuations.poll();
+                            HttpServletResponse peer = (HttpServletResponse) continuation.getServletResponse();
+                            System.out.println(update);
+                            peer.getWriter().write(update);//new JSONArray().put("At " + new Date()).toString());
+                            peer.setStatus(HttpServletResponse.SC_OK);
+                            peer.setContentType("text/html");
+                            continuation.complete();
+                        }
+                        update = "";
                     }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
                 } catch (IOException e) {
                     throw new RuntimeException(e.getMessage(), e);
                 }
@@ -66,82 +67,83 @@ public class ControlServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        Continuation continuation = ContinuationSupport.getContinuation(req);
-        // optionally set a timeout to avoid suspending requests for too long
-        continuation.setTimeout(0);
-        continuation.suspend();
-        continuations.offer(continuation);
-        resp.getWriter().write("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\""
-                + "\"http://www.w3.org/TR/html4/loose.dtd\">"
-                + "<html>"
-                + "<head>"
-                + "<title>HTTP Polling</title>"
-                + "<script type=\"text/javascript\" src=\"http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js\"></script>"
-                + "<script type=\"text/javascript\" src=\"http://jquery-json.googlecode.com/files/jquery.json-2.2.min.js\"></script>"
-                + "<script type=\"text/javascript\">function getXMLHttpRequest() {var xhr = null;if (window.XMLHttpRequest || window.ActiveXObject) {if (window.ActiveXObject) {try {xhr = new ActiveXObject('Msxml2.XMLHTTP');} catch(e) {xhr = new ActiveXObject('Microsoft.XMLHTTP');}} else {xhr = new XMLHttpRequest(); }} else {alert('Votre navigateur ne supporte pas l objet XMLHTTPRequest...');return null;}return xhr;}function getAjax(){var xhr = getXMLHttpRequest();xhr.onreadystatechange=function(){if (xhr.readyState==4 && xhr.status==200){document.getElementById('logs').innerHTML = xhr.responseText;getAjax();}};xhr.open('GET','ajax',true);xhr.send();}</script>"
-                + "</head>"
-                + "<body onload=\"getAjax()\">"
-                + "<div id=\"logs\" style=\"font-family: monospace;\">"
-                + "</div>"
-                + "</body>"
-                + "</html>");
+        
+//        resp.getWriter().write("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\""
+//                + "\"http://www.w3.org/TR/html4/loose.dtd\">"
+//                + "<html>"
+//                + "<head>"
+//                + "<title>HTTP Polling</title>"
+//                + "<script type=\"text/javascript\" src=\"http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js\"></script>"
+//                + "<script type=\"text/javascript\" src=\"http://jquery-json.googlecode.com/files/jquery.json-2.2.min.js\"></script>"
+//                + "<script type=\"text/javascript\">function getXMLHttpRequest() {var xhr = null;if (window.XMLHttpRequest || window.ActiveXObject) {if (window.ActiveXObject) {try {xhr = new ActiveXObject('Msxml2.XMLHTTP');} catch(e) {xhr = new ActiveXObject('Microsoft.XMLHTTP');}} else {xhr = new XMLHttpRequest(); }} else {alert('Votre navigateur ne supporte pas l objet XMLHTTPRequest...');return null;}return xhr;}function getAjax(){var xhr = getXMLHttpRequest();xhr.onreadystatechange=function(){if (xhr.readyState==4 && xhr.status==200){document.getElementById('logs').innerHTML = xhr.responseText;getAjax();}};xhr.open('POST','ajax',true);xhr.send();}</script>"
+//                + "</head>"
+//                + "<body onload=\"getAjax()\">"
+//                + "<div id=\"logs\" style=\"font-family: monospace;\">"
+//                + "</div>"
+//                + "</body>"
+//                + "</html>");
 
 
         //TODO replace and put your code here
-//        PrintWriter out = resp.getWriter();
-//        resp.setContentType("text/html");
-//        out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-//                + "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"
-//                + "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"fr\">"
-//                + " <head>"
-//                + " <title>Interface_SVG</title>"
-//                + " <meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml\" />"
-//                + " <meta name=\"viewport\" content=\"width=device-width\"/>"
-//                + " <link rel=\"stylesheet\" href=\"html/style_svg.css\"></link>"
-//                + " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/COMET_SVG_utilities.js\"></script>"
-//                + " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/jquery-1.7.2.js\"></script>"
-//                + " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/interface.js\"></script>"
-//                + " <script language=\"JavaScript\" type=\"text/javascript\">" + data.toString() + "</script>"
-//                + " </head>"
-//                + "<body onload=\"init_every()\">"
-//                + "<svg id=\"mon_canvas\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"  version=\"1.1\">"
-//                + "<defs id='def'/>"
-//                + "<g id=\"main\">"
-//                + " <g id=\"users\"/>"
-//                + "<g id=\"debarras\"/>"
-//                + "<g id=\"cloud\"/>"
-//                + " <g id=\"plan\"/>"
-//                + " </g>"
-//                + "</svg>"
-//                + "</body>"
-//                + " </html>");
-//        out.close();
+        PrintWriter out = resp.getWriter();
+        resp.setContentType("text/html");
+        out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                + "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"
+                + "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"fr\">"
+                + " <head>"
+                + " <title>Interface_SVG</title>"
+                + " <meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml\" />"
+                + " <meta name=\"viewport\" content=\"width=device-width\"/>"
+                + " <link rel=\"stylesheet\" href=\"html/style_svg.css\"></link>"
+                + " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/COMET_SVG_utilities.js\"></script>"
+                + " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/jquery-1.7.2.js\"></script>"
+                + " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/interface.js\"></script>"
+                + " <script language=\"JavaScript\" type=\"text/javascript\">" + data.toString() + "</script>"
+                + " </head>"
+                + "<body onload=\"init_every()\">"
+                + "<svg id=\"mon_canvas\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"  version=\"1.1\">"
+                + "<defs id='def'/>"
+                + "<g id=\"main\">"
+                + " <g id=\"users\"/>"
+                + "<g id=\"debarras\"/>"
+                + "<g id=\"cloud\"/>"
+                + " <g id=\"plan\"/>"
+                + " </g>"
+                + "</svg>"
+                + "</body>"
+                + " </html>");
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        doGet(req, resp);
-//        if (!req.getParameterMap().isEmpty()) {
-//            if (req.getParameter("device") != null) {
-//                if (req.getParameter("user") != null) {
-//                    System.out.println(req.getParameter("device") + " on " + req.getParameter("user"));
-//                    data.removeUserDevice(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"));
-//                    data.add(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"), new User(req.getParameter("user"), "ing/" + req.getParameter("user") + ".png"));
-//                    data.removeMap(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"));
-//                    data.removeDevice(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"));
-//                } else {
-//                    System.out.println(req.getParameter("device") + " drop in the list");
-//                    data.addDevice(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"));
-//                    data.removeMap(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"));
-//                    data.removeUserDevice(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"));
-//                }
-//            } else {
-//                System.out.println(req.getParameter("map") + " on map at (" + req.getParameter("x") + "," + req.getParameter("y") + ")");
-//                data.addMap(new Device(req.getParameter("map"), "img/" + req.getParameter("map") + ".png", Float.valueOf(req.getParameter("x")), Float.valueOf(req.getParameter("y"))));
-//                data.removeDevice(new Device(req.getParameter("map"), "img/" + req.getParameter("map") + ".png"));
-//                data.removeUserDevice(new Device(req.getParameter("map"), "img/" + req.getParameter("map") + ".png"));
-//            }
-//        }
+        if (!req.getParameterMap().isEmpty()) {
+            if (req.getParameter("device") != null) {
+                if (req.getParameter("user") != null) {
+                    update = req.getParameter("device") + "/" + req.getParameter("user");
+                    data.removeUserDevice(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"));
+                    data.add(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"), new User(req.getParameter("user"), "ing/" + req.getParameter("user") + ".png"));
+                    data.removeMap(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"));
+                    data.removeDevice(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"));
+                } else {
+                    update = req.getParameter("device") + "/list";
+                    data.addDevice(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"));
+                    data.removeMap(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"));
+                    data.removeUserDevice(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"));
+                }
+            } else {
+                update = req.getParameter("map") + "/map(" + req.getParameter("x") + "," + req.getParameter("y") + ")";
+                data.addMap(new Device(req.getParameter("map"), "img/" + req.getParameter("map") + ".png", Float.valueOf(req.getParameter("x")), Float.valueOf(req.getParameter("y"))));
+                data.removeDevice(new Device(req.getParameter("map"), "img/" + req.getParameter("map") + ".png"));
+                data.removeUserDevice(new Device(req.getParameter("map"), "img/" + req.getParameter("map") + ".png"));
+            }
+            System.out.println(update);
+        }else{
+            Continuation continuation = ContinuationSupport.getContinuation(req);
+            // optionally set a timeout to avoid suspending requests for too long
+            continuation.setTimeout(0);
+            continuation.suspend();
+            continuations.offer(continuation);
+        }
     }
 
     @Validate
