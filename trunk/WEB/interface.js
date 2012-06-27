@@ -22,12 +22,8 @@ function getXMLHttpRequest() {
 
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function removeDevice(device, user_list){
-    for(var i=0;i<user_list.lenght;i++){
-        for(var j=0;j<user_list[i].list.lenght;j++){
-            if(user_list[i].list[j].id == device){
-                //TODO: REMOVE DEVICE
-            }
-        }
+    for(var i=0;i<user_list.length;i++){
+        user_list[i].list.remove(document.getElementById(device));
     }
 }
 
@@ -43,24 +39,44 @@ function updateMap(resp, user_list, device_list){
     }
     if(resp[i] == 'l'){
         console.log('LIST : '+resp.substring(0,i-1));
+        removeDevice(resp.substring(0,i-1), user_list);
+        device_list.remove(document.getElementById(resp.substring(0,i-1)));
         document.getElementById('debarraschildren').appendChild(document.getElementById(resp.substring(0,i-1)));
         device_list.add(document.getElementById(resp.substring(0,i-1)));
     }else if(resp[i] == 'u'){
         console.log('USER : '+resp.substring(0,i-1)+'/'+resp.substring(i,resp.length)+' / '+user_list);
         device_list.remove(document.getElementById(resp.substring(0,i-1)));
+        removeDevice(resp.substring(0,i-1), user_list);
         var user = user_list[0];
         var j=0;
         while(j<user_list.length && user.node.id != resp.substring(i,resp.length)){
-            i++;
-            user = user_list[i];
+            j++;
+            user = user_list[j];
         }
         document.getElementById(user.node.getAttribute('gdevices')).appendChild(document.getElementById(resp.substring(0,i-1)));
         user.list.add(document.getElementById(resp.substring(0,i-1)));
-        //user_list.get(resp.substring(i,resp.length)).getAttribute('gdevices')
     }else{
         console.log('MAP : '+resp.substring(0,i-1));
         device_list.remove(document.getElementById(resp.substring(0,i-1)));
+        removeDevice(resp.substring(0,i-1), user_list);
+        var k = i;
+        while(c!=','){
+            c=resp[k];
+            k++;
+        }
+                
+        var x = parseFloat(resp.substring(i+4,k-1));
+        var y = parseFloat(resp.substring(k,resp.length));
         
+        var str_mtx = 'matrix(1' 
+                    + ', 0'
+                    + ', 0'
+                    + ', 1'
+                    + ', ' + x
+                    + ', ' + y
+                    + ')';
+        document.getElementById(resp.substring(0,i-1)).setAttribute('transform', str_mtx);
+        document.getElementById('planchildren').appendChild(document.getElementById(resp.substring(0,i-1)));
     }
 }
 
@@ -364,8 +380,8 @@ function Container(id, b_scrollbar, width, height, transform){
         Drop_zone(this.id, '*', 
             function(z, n, e) {
                 console.log("startD");
-                if(list!=undefined && list.indexOf(n) != -1)
-                    list.remove(n);
+                //if(list!=undefined && list.indexOf(n) != -1)
+                  //  list.remove(n);
             }, 	function(z, n, e) {
                 console.log("hoverD");
             }, function(z, n, e) {
@@ -467,8 +483,8 @@ function List(root_node, dec,orientation){
             var x = -(bbox_e.width+this.dec);
             str_trans = ' translate('+x+', 0)';
         }
-        var i = this.indexOf(e);
-        if(i!=-1){
+        var ind = this.indexOf(e);
+        if(ind!=-1){
             for(i=this.indexOf(e);i<this.list.length-1;i++){
                 this.list[i] = this.list[i+1];
                 this.list[i].setAttribute('transform',this.list[i].getAttribute('transform')+str_trans);
@@ -610,7 +626,7 @@ function User(user, img, devices, name){
                 }
             }
             );
-    }
+    };
 }
 
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
