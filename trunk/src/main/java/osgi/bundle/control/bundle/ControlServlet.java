@@ -1,5 +1,10 @@
 package osgi.bundle.control.bundle;
 
+import bundle.osgi.bridge.inter.Bridge;
+import bundle.osgi.bridge.inter.DBNotifyService;
+import bundle.osgi.bridge.inter.DBNotifySubscribers;
+import bundle.osgi.bridge.inter.SmartObject;
+import bundle.osgi.bridge.inter.SmartObject.SMART_TYPE;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
@@ -11,7 +16,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.felix.ipojo.annotations.*;
-import org.codehaus.jettison.json.JSONArray;
 import org.ops4j.pax.web.service.WebContainer;
 import org.osgi.service.http.HttpContext;
 import org.osgi.service.http.NamespaceException;
@@ -24,9 +28,10 @@ import org.eclipse.jetty.continuation.ContinuationSupport;
  */
 @Component
 @Instantiate
-public class ControlServlet extends HttpServlet {
+public class ControlServlet extends HttpServlet implements DBNotifySubscribers {
 
     WebContainer webContainer;
+    DBNotifyService dbns;
     private DataTelec data;
     private final Queue<Continuation> continuations = new ConcurrentLinkedQueue<Continuation>();
     private String update = "";
@@ -36,16 +41,19 @@ public class ControlServlet extends HttpServlet {
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
-                    if(update!=""){
+                    if (!update.equals("")) { //an event has to be send
                         while (!continuations.isEmpty()) {
                             Continuation continuation = continuations.poll();
+                            //get the servlet response
                             HttpServletResponse peer = (HttpServletResponse) continuation.getServletResponse();
                             System.out.println(update);
-                            peer.getWriter().write(update);//new JSONArray().put("At " + new Date()).toString());
+                            peer.getWriter().write(update);
                             peer.setStatus(HttpServletResponse.SC_OK);
                             peer.setContentType("text/html");
+                            //close the continuation
                             continuation.complete();
                         }
+                        //the event has been sent
                         update = "";
                     }
                 } catch (IOException e) {
@@ -67,24 +75,6 @@ public class ControlServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        
-//        resp.getWriter().write("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\""
-//                + "\"http://www.w3.org/TR/html4/loose.dtd\">"
-//                + "<html>"
-//                + "<head>"
-//                + "<title>HTTP Polling</title>"
-//                + "<script type=\"text/javascript\" src=\"http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js\"></script>"
-//                + "<script type=\"text/javascript\" src=\"http://jquery-json.googlecode.com/files/jquery.json-2.2.min.js\"></script>"
-//                + "<script type=\"text/javascript\">function getXMLHttpRequest() {var xhr = null;if (window.XMLHttpRequest || window.ActiveXObject) {if (window.ActiveXObject) {try {xhr = new ActiveXObject('Msxml2.XMLHTTP');} catch(e) {xhr = new ActiveXObject('Microsoft.XMLHTTP');}} else {xhr = new XMLHttpRequest(); }} else {alert('Votre navigateur ne supporte pas l objet XMLHTTPRequest...');return null;}return xhr;}function getAjax(){var xhr = getXMLHttpRequest();xhr.onreadystatechange=function(){if (xhr.readyState==4 && xhr.status==200){document.getElementById('logs').innerHTML = xhr.responseText;getAjax();}};xhr.open('POST','ajax',true);xhr.send();}</script>"
-//                + "</head>"
-//                + "<body onload=\"getAjax()\">"
-//                + "<div id=\"logs\" style=\"font-family: monospace;\">"
-//                + "</div>"
-//                + "</body>"
-//                + "</html>");
-
-
-        //TODO replace and put your code here
         PrintWriter out = resp.getWriter();
         resp.setContentType("text/html");
         out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -118,26 +108,27 @@ public class ControlServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!req.getParameterMap().isEmpty()) {
             if (req.getParameter("device") != null) {
-                if (req.getParameter("user") != null) {
+                if (req.getParameter("user") != null) { //a device drop on a user
                     update = req.getParameter("device") + "/" + req.getParameter("user");
-                    data.removeUserDevice(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"));
-                    data.add(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"), new User(req.getParameter("user"), "ing/" + req.getParameter("user") + ".png"));
-                    data.removeMap(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"));
-                    data.removeDevice(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"));
-                } else {
+                    data.removeUserDevice(new Device(req.getParameter("device"), req.getParameter("img")));
+                    data.add(new Device(req.getParameter("device"), req.getParameter("img")), new User(req.getParameter("user"), "img/" + req.getParameter("user") + ".png"));
+                    data.removeMap(new Device(req.getParameter("device"), req.getParameter("img")));
+                    data.removeDevice(new Device(req.getParameter("device"), req.getParameter("img")));
+                } else { //a device drop in the list
                     update = req.getParameter("device") + "/list";
-                    data.addDevice(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"));
-                    data.removeMap(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"));
-                    data.removeUserDevice(new Device(req.getParameter("device"), "img/" + req.getParameter("device") + ".png"));
+                    data.addDevice(new Device(req.getParameter("device"), req.getParameter("img")));
+                    data.removeMap(new Device(req.getParameter("device"), req.getParameter("img")));
+                    data.removeUserDevice(new Device(req.getParameter("device"), req.getParameter("img")));
                 }
-            } else {
+            } else { //a device drop on the map
                 update = req.getParameter("map") + "/map(" + req.getParameter("x") + "," + req.getParameter("y") + ")";
-                data.addMap(new Device(req.getParameter("map"), "img/" + req.getParameter("map") + ".png", Float.valueOf(req.getParameter("x")), Float.valueOf(req.getParameter("y"))));
-                data.removeDevice(new Device(req.getParameter("map"), "img/" + req.getParameter("map") + ".png"));
-                data.removeUserDevice(new Device(req.getParameter("map"), "img/" + req.getParameter("map") + ".png"));
+                data.addMap(new Device(req.getParameter("map"), req.getParameter("img"), Float.valueOf(req.getParameter("x")), Float.valueOf(req.getParameter("y"))));
+                data.removeDevice(new Device(req.getParameter("map"), req.getParameter("img")));
+                data.removeUserDevice(new Device(req.getParameter("map"), req.getParameter("img")));
             }
             System.out.println(update);
-        }else{
+        } else {
+            //save the continuation to get the servlet response
             Continuation continuation = ContinuationSupport.getContinuation(req);
             // optionally set a timeout to avoid suspending requests for too long
             continuation.setTimeout(0);
@@ -150,16 +141,16 @@ public class ControlServlet extends HttpServlet {
     public void start() {
         data = new DataTelec();
         User u = new User("user1", "img/user1.png");
-        u.addDevice(new Device("device3", "img/device3.png"));
+        u.addDevice(new Device("device3", "html/img/device3.png"));
         data.addUser(u);
         data.addUser(new User("user2", "img/user2.png"));
         data.addUser(new User("user3", "img/user3.png"));
         data.addUser(new User("user4", "img/user4.png"));
         data.addUser(new User("user5", "img/user5.png"));
-        data.addMap(new Device("device2", "img/device2.png", 50, 50));
-        data.addDevice(new Device("device1", "img/device1.png"));
-        data.addDevice(new Device("device4", "img/device4.png"));
-        data.addDevice(new Device("device5", "img/device5.png"));
+        data.addMap(new Device("device2", "html/img/device2.png", 50, 50));
+        data.addDevice(new Device("device1", "html/img/device1.png"));
+        data.addDevice(new Device("device4", "html/img/device4.png"));
+        data.addDevice(new Device("device5", "html/img/device5.png"));
         DEBUG("HTTP Web controler starting");
         if (webContainer != null) {
             try {
@@ -179,6 +170,8 @@ public class ControlServlet extends HttpServlet {
             } catch (NamespaceException ex) {
                 Logger.getLogger(ControlServlet.class.getName()).log(Level.SEVERE, null, ex);
             }
+            //register the controller bundle to the data base updates
+            dbns.subscribe(this);
         } else {
             DEBUG("ERROR: no compatible HTTP server found");
         }
@@ -188,6 +181,8 @@ public class ControlServlet extends HttpServlet {
     public void stop() {
         if (webContainer != null) {
             webContainer = null;
+            //register the controller bundle to the data base updates
+            dbns.unsubscribe(this);
         }
         DEBUG("HTTP Server stopped");
     }
@@ -202,6 +197,34 @@ public class ControlServlet extends HttpServlet {
     public void unbindDeviceNotifySubscribe(WebContainer webContainer) {
         this.webContainer = null;
         DEBUG("WebContainer services unsubscribe");
+    }
+
+    @Bind
+    public void bindDBNotifyService(DBNotifyService dbns) {
+        this.dbns = dbns;
+        DEBUG("RDF data base notify services subscribe");
+    }
+
+    @Unbind
+    public void unbindDBNotifyService(DBNotifyService dbns) {
+        this.dbns = null;
+        DEBUG("RDF data base notify services unsubscribe");
+    }
+
+    public void smartObjectAdded(SmartObject so) {
+        update = "adddevice/device" + so.getUID();
+        data.addDevice(new Device("device"+so.getUID(), "html/img/device6.png"));
+    }
+
+    public void smartObjectRemoved(SmartObject so) {
+        data.removeMap(new Device("device"+so.getUID(), "html/img/device6.png"));
+        data.removeDevice(new Device("device"+so.getUID(), "html/img/device6.png"));
+        data.removeUserDevice(new Device("device"+so.getUID(), "html/img/device6.png"));
+        update = "removedevice/device" + so.getUID();
+    }
+
+    public void smartObjectUpdated(SmartObject so) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
     private static final long serialVersionUID = -7578840142400570555L;
     //*******************************

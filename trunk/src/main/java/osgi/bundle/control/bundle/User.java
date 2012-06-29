@@ -60,7 +60,7 @@ class User {
     public String toString() {
         String tab = "var devices = new Array();";
         for (Device d : devices) {
-            tab += "var d = new Device('" + d.getId() + "','html/" + d.getImg() + "');"
+            tab += "var d = new Device('" + d.getId() + "','" + d.getImg() + "');"
                     + "devices.push(d);";
         }
         return tab + "var u1 = new User('" + id + "','html/" + img + "',devices, '" + name + "');"
