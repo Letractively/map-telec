@@ -27,18 +27,6 @@
             <artifactId>org.apache.felix.ipojo.annotations</artifactId>
             <version>1.8.2</version>
         </dependency>
-        <dependency>
-            <groupId>org.codehaus.jettison</groupId>
-            <artifactId>jettison</artifactId>
-            <version>1.2</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>stax</groupId>
-                    <artifactId>stax-api</artifactId>
-                </exclusion>
-            </exclusions>
-            <scope>provided</scope>
-        </dependency>
     </dependencies>
     
     <build>
@@ -56,6 +44,17 @@
                 <configuration>
                     <instructions>
                         <Bundle-SymbolicName>Map.Telec.bundle</Bundle-SymbolicName>
+                        <Private-Package>
+                            osgi.bundle.control.bundle.*
+                        </Private-Package>
+                         <Import-Package>
+                            bundle.osgi.bridge.inter,
+                            javax.servlet.*,
+                            org.ops4j.pax.web.service,
+                            org.osgi.service.http,
+                            org.eclipse.jetty.continuation
+                        </Import-Package>
+                        <Export-Package></Export-Package>
                     </instructions>
                 </configuration>
             </plugin>

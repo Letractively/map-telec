@@ -47,7 +47,7 @@ class Device {
 
     @Override
     public String toString() {
-        return "var d1 = new Device('"+id+"','html/"+img+"');"+
+        return "var d1 = new Device('"+id+"','"+img+"');"+
         "document.getElementById('debarraschildren').appendChild(d1);"+
         "Draggable(d1.id,[d1.id], startDragElement, null,  null);"+
         "l.add(d1);";

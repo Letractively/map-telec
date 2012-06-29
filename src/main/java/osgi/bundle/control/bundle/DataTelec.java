@@ -70,7 +70,7 @@ public class DataTelec {
         for (User u : users) {
             res += u.toString();
         }
-        res += "return user_list;}";
+        res += "return [user_list,l];}";
         return res;
     }
 
@@ -88,7 +88,7 @@ public class DataTelec {
         String res = "";
         if (map.size() != 0) {
             for (Device d : map) {
-                res += "var d1 = new Device('" + d.getId() + "','html/" + d.getImg() + "');"
+                res += "var d1 = new Device('" + d.getId() + "','" + d.getImg() + "');"
                         + "mapContainer.add(d1);"
                         + "d1.setAttribute('transform','translate(" + d.getX() + "," + d.getY() + ")');"
                         + "Draggable(d1.id,[d1.id], startDragElement, null,  null);";
@@ -101,7 +101,7 @@ public class DataTelec {
         return "function init_every() {"
                 + "init_draggable();"
                 + "var userContainer = new Container('users',true,window.innerWidth/2-window.innerWidth/120,window.innerHeight/2-window.innerHeight/60,'translate(0,0)');"
-                + "var user_list = init_users();"
+                + "var user_lists = init_users();"
                 + "debarrasContainer = new Container('debarras',true,window.innerWidth/2-window.innerWidth/120,window.innerHeight/2-window.innerHeight/60,'translate(0,'+62*window.innerHeight/120+')');"
                 + "var devices_list = init_devices();"
                 + "debarrasContainer.setDropZone(devices_list);"
@@ -116,9 +116,9 @@ public class DataTelec {
                 + "tmp.setAttribute('id','text_tmp');"
                 + "tmp.setAttribute('x','20');"
                 + "tmp.setAttribute('y','20');"
-                + "tmp.appendChild(document.createTextNode('coucou'));"
+                + "tmp.appendChild(document.createTextNode('test'));"
                 + "document.getElementById('plan').appendChild(tmp);"
-                + "getAjax(user_list, devices_list);"
+                + "getAjax(user_lists, devices_list);"
                 + "}";
     }
 

@@ -1,4 +1,6 @@
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+//Return a XMLHttpRequest
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function getXMLHttpRequest() {
     var xhr = null;
 	
@@ -21,6 +23,8 @@ function getXMLHttpRequest() {
 }
 
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+//Remove a device device in the lists of users
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function removeDevice(device, user_list){
     for(var i=0;i<user_list.length;i++){
         user_list[i].list.remove(document.getElementById(device));
@@ -28,37 +32,39 @@ function removeDevice(device, user_list){
 }
 
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
-function updateMap(resp, user_list, device_list){
+//Update the interface for each request
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+function updateMap(resp, user_lists, device_list){
     document.getElementById('text_tmp').removeChild(document.getElementById('text_tmp').childNodes[0]);
     document.getElementById('text_tmp').appendChild(document.createTextNode(resp));
     var c = resp[0];
     var i = 1;
-    while(c != '/'){
+    while(i<resp.length && c != '/'){
         c = resp[i];
         i++;
     }
     if(resp[i] == 'l'){
         console.log('LIST : '+resp.substring(0,i-1));
-        removeDevice(resp.substring(0,i-1), user_list);
+        removeDevice(resp.substring(0,i-1), user_lists[0]);
         device_list.remove(document.getElementById(resp.substring(0,i-1)));
         document.getElementById('debarraschildren').appendChild(document.getElementById(resp.substring(0,i-1)));
         device_list.add(document.getElementById(resp.substring(0,i-1)));
     }else if(resp[i] == 'u'){
-        console.log('USER : '+resp.substring(0,i-1)+'/'+resp.substring(i,resp.length)+' / '+user_list);
+        console.log('USER : '+resp.substring(0,i-1)+'/'+resp.substring(i,resp.length)+' / '+user_lists[0]);
         device_list.remove(document.getElementById(resp.substring(0,i-1)));
-        removeDevice(resp.substring(0,i-1), user_list);
-        var user = user_list[0];
+        removeDevice(resp.substring(0,i-1), user_lists[0]);
+        var user = user_lists[0][0];
         var j=0;
-        while(j<user_list.length && user.node.id != resp.substring(i,resp.length)){
+        while(j<user_lists[0].length && user.node.id != resp.substring(i,resp.length)){
             j++;
-            user = user_list[j];
+            user = user_lists[0][j];
         }
         document.getElementById(user.node.getAttribute('gdevices')).appendChild(document.getElementById(resp.substring(0,i-1)));
         user.list.add(document.getElementById(resp.substring(0,i-1)));
-    }else{
+    }else if(resp[i] == 'm'){
         console.log('MAP : '+resp.substring(0,i-1));
         device_list.remove(document.getElementById(resp.substring(0,i-1)));
-        removeDevice(resp.substring(0,i-1), user_list);
+        removeDevice(resp.substring(0,i-1), user_lists[0]);
         var k = i;
         while(c!=','){
             c=resp[k];
@@ -67,26 +73,47 @@ function updateMap(resp, user_list, device_list){
                 
         var x = parseFloat(resp.substring(i+4,k-1));
         var y = parseFloat(resp.substring(k,resp.length));
-        
+        if(x<0) x=0;
+        if(y<0) y=0;
         var str_mtx = 'matrix(1' 
-                    + ', 0'
-                    + ', 0'
-                    + ', 1'
-                    + ', ' + x
-                    + ', ' + y
-                    + ')';
+                + ', 0'
+                + ', 0'
+                + ', 1'
+                + ', ' + x
+                + ', ' + y
+                + ')';
         document.getElementById(resp.substring(0,i-1)).setAttribute('transform', str_mtx);
         document.getElementById('planchildren').appendChild(document.getElementById(resp.substring(0,i-1)));
+    }else if(resp.substring(0,i-1)=="adduser"){
+        var u1 = new User('userid','html/img/user1.png',null, 'noname');
+        document.getElementById('userschildren').appendChild(u1.node);
+        u1.setDropZone(new List(document.getElementById(u1.node.id),0,'horizontal'));
+        user_lists[1].add(u1.node);
+        user_lists[0].push(u1);
+    }else if(resp.substring(0,i-1)=="adddevice"){
+        var d1 = new Device(resp.substring(i,resp.length),'html/img/device6.png');
+        document.getElementById('debarraschildren').appendChild(d1);
+        Draggable(d1.id,[d1.id], startDragElement, null,  null);
+        device_list.add(d1);
+    }else if(resp.substring(0,i-1)=="removeuser"){
+        
+    }else if(resp.substring(0,i-1)=="removedevice"){
+        device_list.remove(document.getElementById(resp.substring(i,resp.length)));
+        removeDevice(resp.substring(i,resp.length), user_lists[0]);
+        document.getElementById(resp.substring(i,resp.length)).parentNode.removeChild(document.getElementById(resp.substring(i,resp.length)));
     }
 }
 
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
-function getAjax(user_list, device_list){
+//Loop which create a XMLHttpRequest and wait for the response
+//then call recursivly the method
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+function getAjax(user_lists, device_list){
     var xhr = getXMLHttpRequest();
     xhr.onreadystatechange=function(){
         if (xhr.readyState==4 && xhr.status==200){
-            updateMap(xhr.responseText, user_list, device_list)
-            getAjax(user_list, device_list);
+            updateMap(xhr.responseText, user_lists, device_list)
+            getAjax(user_lists, device_list);
         }
     };
     
@@ -95,6 +122,8 @@ function getAjax(user_list, device_list){
 }
 
 
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+//Create a new separator between 2 nodes groups
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function Separator( id, root_node, orientation, gr_node1, gr_node2, taille_ref){
     var svgNS = "http://www.w3.org/2000/svg";
@@ -243,6 +272,8 @@ function Separator( id, root_node, orientation, gr_node1, gr_node2, taille_ref){
 
 
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+//Create a new scroll bar in the root_node and scroll the scroll_node
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function Scrollbar( id, root_node, orientation, scroll_node){
     var svgNS = "http://www.w3.org/2000/svg";
     var sb = document.createElementNS(svgNS,'g');
@@ -340,6 +371,8 @@ function Scrollbar( id, root_node, orientation, scroll_node){
 
 
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+//Create a new container
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function Container(id, b_scrollbar, width, height, transform){
     this.id = id;
     this.b_scrollbar = b_scrollbar;
@@ -380,8 +413,8 @@ function Container(id, b_scrollbar, width, height, transform){
         Drop_zone(this.id, '*', 
             function(z, n, e) {
                 console.log("startD");
-                //if(list!=undefined && list.indexOf(n) != -1)
-                  //  list.remove(n);
+            //if(list!=undefined && list.indexOf(n) != -1)
+            //  list.remove(n);
             }, 	function(z, n, e) {
                 console.log("hoverD");
             }, function(z, n, e) {
@@ -411,13 +444,13 @@ function Container(id, b_scrollbar, width, height, transform){
                         var xhr = getXMLHttpRequest();
                         xhr.open("POST", "index.xhtml", true);
                         xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
-                        xhr.send("device="+n.getAttribute('id')+"&action=drop");
+                        xhr.send("device="+n.getAttribute('id')+"&action=drop"+"&img="+n.getAttribute('href'));
                     }
                     else{
                         var xhr = getXMLHttpRequest();
                         xhr.open("POST", "index.xhtml", true);
                         xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
-                        xhr.send("map="+n.getAttribute('id')+"&x="+MAB.e+"&y="+MAB.f);
+                        xhr.send("map="+n.getAttribute('id')+"&x="+MAB.e+"&y="+MAB.f+"&img="+n.getAttribute('href'));
                     }
                 }
             }
@@ -428,6 +461,8 @@ function Container(id, b_scrollbar, width, height, transform){
     }
 }
 
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+//Create a new list in the root_node
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function List(root_node, dec,orientation){
     this.list = new Array();
@@ -529,14 +564,8 @@ function List(root_node, dec,orientation){
 }
 
 
-
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
-function PanelDrop(panel, dropItem, start, hover, out, done, undone, fct){
-    this.panel = panel;
-    this.dropItem = dropItem;
-    Drop_zone(panel, dropItem, start, hover, out, done, undone, fct);
-}
-
+//Create a new device device with the image img
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function Device(device, img){
     var svgNS = "http://www.w3.org/2000/svg";
@@ -553,6 +582,9 @@ function Device(device, img){
     return i;
 }
 
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+//Create a new user user with the image img, the associated devices list devices
+//and the name name
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function User(user, img, devices, name){
     var svgNS = "http://www.w3.org/2000/svg";
@@ -604,8 +636,8 @@ function User(user, img, devices, name){
         console.log(list);
         Drop_zone(this.node.id, '*', 
             function(z, n, e) {
-                //if(list!=undefined && list.indexOf(n) != -1)
-                  //  list.remove(n);
+            //if(list!=undefined && list.indexOf(n) != -1)
+            //  list.remove(n);
             }, 	function(z, n, e) {
             }, function(z, n, e) {
             }, function(z, n, e) {
@@ -621,7 +653,7 @@ function User(user, img, devices, name){
                         var xhr = getXMLHttpRequest();
                         xhr.open("POST", "index.xhtml", true);
                         xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
-                        xhr.send("user="+z.getAttribute('id')+"&device="+n.getAttribute('id'));
+                        xhr.send("user="+z.getAttribute('id')+"&device="+n.getAttribute('id')+"&img="+n.getAttribute('href'));
                     } 
                 }
             }
@@ -629,6 +661,8 @@ function User(user, img, devices, name){
     };
 }
 
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+//Methode call when an element is drag
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function startDragElement(n,e){
     var MAm = document.getElementById('main').getCTM().inverse();
@@ -649,29 +683,8 @@ function startDragElement(n,e){
 }
 			
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+//Method call when an element is drop
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function endDrageElement(n){
     n.style.opacity = "1";
-}
-			
-//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
-function endDragOnUser(z,n,e){
-    if(n.id.slice(0,6) == "device"){
-        var svgNS = "http://www.w3.org/2000/svg";
-        endDrageElement(n);
-        var bbox_user = z.getBBox();
-        var point_tmp = document.getElementById('mon_canvas').createSVGPoint();
-        point_tmp.x = bbox_user.x + bbox_user.width;
-        point_tmp.y = bbox_user.y;
-		
-        var noeud_repere = z;
-        point_tmp = point_tmp.matrixTransform( noeud_repere.getCTM().inverse() );
-        var n_devices = document.getElementById( noeud_repere.getAttribute('gdevices') );
-        console.log('Device group ' + noeud_repere.getAttribute('gdevices') + ' is node ' + n_devices);
-        n.parentNode.removeChild(n);
-        n_devices.appendChild(n);
-        var str_mtx = 'translate('  + (5 + point_tmp.x)
-        + ', ' + (5 + point_tmp.y)
-        + ')';
-        n_devices.setAttribute('transform', str_mtx);
-    }
 }
