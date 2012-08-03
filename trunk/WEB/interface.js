@@ -848,6 +848,7 @@ function endDrageElement(n){
 
 function init_iframe(id,src){
     var i = document.createElement('iframe');
+    //TODO: attetion adresse IP de l usine en dur
     if(src == 'html/img/lightON.png'){
         i.setAttribute('src','http://194.199.23.251:8080/lamp?device='+id+"&value=1");
     }else{
