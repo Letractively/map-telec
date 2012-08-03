@@ -143,7 +143,7 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers, 
                     }
                 }
                 if (req.getParameter("user") != null) { //a device drop on a user
-                    update.offer(req.getParameter("device") + "/" + req.getParameter("user"));
+                    update.offer(req.getParameter("device") + "/u" + req.getParameter("user"));
                     data.removeUserDevice(d);
                     data.add(d, new User(req.getParameter("user"), "img/" + req.getParameter("user") + ".png"));
                     data.removeMap(d);
