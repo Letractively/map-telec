@@ -1,9 +1,6 @@
 package osgi.bundle.control.bundle;
 
-import bundle.osgi.bridge.inter.Bridge;
-import bundle.osgi.bridge.inter.DBNotifyService;
-import bundle.osgi.bridge.inter.DBNotifySubscribers;
-import bundle.osgi.bridge.inter.SmartObject;
+import bundle.osgi.bridge.inter.*;
 import bundle.osgi.bridge.inter.SmartObject.SMART_TYPE;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -21,6 +18,7 @@ import org.osgi.service.http.HttpContext;
 import org.osgi.service.http.NamespaceException;
 import org.eclipse.jetty.continuation.Continuation;
 import org.eclipse.jetty.continuation.ContinuationSupport;
+import org.eclipse.jetty.server.handler.ContextHandler;
 
 /**
  * @author Cedric Gerard
@@ -28,33 +26,34 @@ import org.eclipse.jetty.continuation.ContinuationSupport;
  */
 @Component
 @Instantiate
-public class ControlServlet extends HttpServlet implements DBNotifySubscribers {
+public class ControlServlet extends HttpServlet implements DBNotifySubscribers, BridgeServiceSubscriber {
 
     WebContainer webContainer;
     DBNotifyService dbns;
     private DataTelec data;
+    private SPARQLRequestService srs;
     private final Queue<Continuation> continuations = new ConcurrentLinkedQueue<Continuation>();
-    private String update = "";
+    private ConcurrentLinkedQueue<String> update = new ConcurrentLinkedQueue<String>();
     private final Thread generator = new Thread("Event generator") {
 
         @Override
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
-                    if (!update.equals("")) { //an event has to be send
+                    if (!update.isEmpty()) { //an event has to be send
+                        String response = update.poll();
+                        System.out.println(response);
                         while (!continuations.isEmpty()) {
                             Continuation continuation = continuations.poll();
                             //get the servlet response
                             HttpServletResponse peer = (HttpServletResponse) continuation.getServletResponse();
-                            System.out.println(update);
-                            peer.getWriter().write(update);
+                            peer.getWriter().write(response);
                             peer.setStatus(HttpServletResponse.SC_OK);
                             peer.setContentType("text/html");
                             //close the continuation
                             continuation.complete();
                         }
                         //the event has been sent
-                        update = "";
                     }
                 } catch (IOException e) {
                     throw new RuntimeException(e.getMessage(), e);
@@ -88,6 +87,10 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers {
                 + " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/COMET_SVG_utilities.js\"></script>"
                 + " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/jquery-1.7.2.js\"></script>"
                 + " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/interface.js\"></script>"
+                + " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/dialog.js\"></script>"
+                + " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/editeur.js\"></script>"
+                + " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/screen.js\"></script>"
+                + " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/group.js\"></script>"
                 + " <script language=\"JavaScript\" type=\"text/javascript\">" + data.toString() + "</script>"
                 + " </head>"
                 + "<body onload=\"init_every()\">"
@@ -100,6 +103,11 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers {
                 + " <g id=\"plan\"/>"
                 + " </g>"
                 + "</svg>"
+                + "<svg id=\"editmapcanvas\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\">"
+                + "</svg>"
+                + "<img id='edit' src='html/img/edit.png' width='32' height='32' onclick=\"initMap(new Array(" + data.roomsToStringScript() + "));\"></img>"
+//                + "<div id='screen'></div>"
+//                + "<button id='screenbutton' style=\"position: absolute;top:100;left:100\" onclick=\"initScreen();\">Screen</button>"
                 + "</body>"
                 + " </html>");
     }
@@ -108,25 +116,165 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (!req.getParameterMap().isEmpty()) {
             if (req.getParameter("device") != null) {
-                if (req.getParameter("user") != null) { //a device drop on a user
-                    update = req.getParameter("device") + "/" + req.getParameter("user");
-                    data.removeUserDevice(new Device(req.getParameter("device"), req.getParameter("img")));
-                    data.add(new Device(req.getParameter("device"), req.getParameter("img")), new User(req.getParameter("user"), "img/" + req.getParameter("user") + ".png"));
-                    data.removeMap(new Device(req.getParameter("device"), req.getParameter("img")));
-                    data.removeDevice(new Device(req.getParameter("device"), req.getParameter("img")));
-                } else { //a device drop in the list
-                    update = req.getParameter("device") + "/list";
-                    data.addDevice(new Device(req.getParameter("device"), req.getParameter("img")));
-                    data.removeMap(new Device(req.getParameter("device"), req.getParameter("img")));
-                    data.removeUserDevice(new Device(req.getParameter("device"), req.getParameter("img")));
+                Device d = null;
+                int index = data.getDevices().indexOf(new Device(null, null, null, SMART_TYPE.UNKNOWN, null, req.getParameter("device")));
+                if (index >= 0) {
+                    d = data.getDevices().get(index);
+                } else {
+                    index = data.getMap().indexOf(new Device(null, null, null, SMART_TYPE.UNKNOWN, null, req.getParameter("device")));
+                    if (index >= 0) {
+                        d = data.getMap().get(index);
+                    } else {
+                        for (User u : data.getUsers()) {
+                            index = u.getDevices().indexOf(new Device(null, null, null, SMART_TYPE.UNKNOWN, null, req.getParameter("device")));
+                            if (index >= 0) {
+                                d = u.getDevices().get(index);
+                            }
+                        }
+                        if (d == null) {
+                            for (Iterator<Device> it = data.getDeviceGroups().keySet().iterator(); it.hasNext();) {
+                                Device group = it.next();
+                                index = data.getDeviceGroups().get(group).indexOf(new Device(null, null, null, SMART_TYPE.UNKNOWN, null, req.getParameter("device")));
+                                if (index >= 0) {
+                                    d = data.getDeviceGroups().get(group).get(index);
+                                }
+                            }
+                        }
+                    }
                 }
-            } else { //a device drop on the map
-                update = req.getParameter("map") + "/map(" + req.getParameter("x") + "," + req.getParameter("y") + ")";
-                data.addMap(new Device(req.getParameter("map"), req.getParameter("img"), Float.valueOf(req.getParameter("x")), Float.valueOf(req.getParameter("y"))));
-                data.removeDevice(new Device(req.getParameter("map"), req.getParameter("img")));
-                data.removeUserDevice(new Device(req.getParameter("map"), req.getParameter("img")));
+                if (req.getParameter("user") != null) { //a device drop on a user
+                    update.offer(req.getParameter("device") + "/" + req.getParameter("user"));
+                    data.removeUserDevice(d);
+                    data.add(d, new User(req.getParameter("user"), "img/" + req.getParameter("user") + ".png"));
+                    data.removeMap(d);
+                    data.removeDevice(d);
+                    data.removeGroupDevice(d);
+                } else { //a device drop in the list
+                    update.offer(req.getParameter("device") + "/list");
+                    data.addDevice(d);
+                    data.removeMap(d);
+                    data.removeUserDevice(d);
+                    data.removeGroupDevice(d);
+                }
+            } else if (req.getParameter("map") != null) { //a device drop on the map
+                Device d = null;
+                int index = data.getDevices().indexOf(new Device(null, null, null, SMART_TYPE.UNKNOWN, null, req.getParameter("map")));
+                if (index >= 0) {
+                    d = data.getDevices().get(index);
+                } else {
+                    index = data.getMap().indexOf(new Device(null, null, null, SMART_TYPE.UNKNOWN, null, req.getParameter("map")));
+                    if (index >= 0) {
+                        d = data.getMap().get(index);
+                    } else {
+                        for (User u : data.getUsers()) {
+                            index = u.getDevices().indexOf(new Device(null, null, null, SMART_TYPE.UNKNOWN, null, req.getParameter("map")));
+                            if (index >= 0) {
+                                d = u.getDevices().get(index);
+                            }
+                        }
+                        if (d == null) {
+                            for (Iterator<Device> it = data.getDeviceGroups().keySet().iterator(); it.hasNext();) {
+                                Device group = it.next();
+                                index = data.getDeviceGroups().get(group).indexOf(new Device(null, null, null, SMART_TYPE.UNKNOWN, null, req.getParameter("map")));
+                                if (index >= 0) {
+                                    d = data.getDeviceGroups().get(group).get(index);
+                                }
+                            }
+                        }
+                    }
+                }
+                d.setX(Float.valueOf(req.getParameter("x")));
+                d.setY(Float.valueOf(req.getParameter("y")));
+                String res = data.addMap(d);
+                if (res.equals("")) {
+                    data.removeDevice(d);
+                    data.removeUserDevice(d);
+                    data.removeGroupDevice(d);
+                    update.offer(req.getParameter("map") + "/map(" + req.getParameter("x") + "," + req.getParameter("y") + ")");
+                    DEBUG(req.getParameter("room"));
+                } else {
+                    data.removeDevice(d);
+                    data.removeUserDevice(d);
+                    data.removeMap(d);
+                    update.offer(res);
+                }
+            } else if (req.getParameter("data") != null) {
+                update.offer("data:" + req.getParameter("data"));
+            } else if (req.getParameter("fin") != null) {
+                update.offer("fin");
+            } else if (req.getParameter("group") != null) {
+                if (req.getParameter("draw") == null) {
+                    Device d = null;
+                    int index = data.getDevices().indexOf(new Device(null, null, null, SMART_TYPE.UNKNOWN, null, req.getParameter("id")));
+                    if (index >= 0) {
+                        d = data.getDevices().get(index);
+                    } else {
+                        index = data.getMap().indexOf(new Device(null, null, null, SMART_TYPE.UNKNOWN, null, req.getParameter("id")));
+                        if (index >= 0) {
+                            d = data.getMap().get(index);
+                        } else {
+                            for (User u : data.getUsers()) {
+                                index = u.getDevices().indexOf(new Device(null, null, null, SMART_TYPE.UNKNOWN, null, req.getParameter("id")));
+                                if (index >= 0) {
+                                    d = u.getDevices().get(index);
+                                }
+                            }
+                            if (d == null) {
+                                for (Iterator<Device> it = data.getDeviceGroups().keySet().iterator(); it.hasNext();) {
+                                    Device group = it.next();
+                                    index = data.getDeviceGroups().get(group).indexOf(new Device(null, null, null, SMART_TYPE.UNKNOWN, null, req.getParameter("id")));
+                                    if (index >= 0) {
+                                        d = data.getDeviceGroups().get(group).get(index);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    data.removeDevice(d);
+                    data.removeUserDevice(d);
+                    data.removeMap(d);
+                    data.removeGroupDevice(d);
+                    d.setX(Float.valueOf(req.getParameter("x")));
+                    d.setY(Float.valueOf(req.getParameter("y")));
+                    for (Iterator<Device> it = data.getDeviceGroups().keySet().iterator(); it.hasNext();) {
+                        Device group = it.next();
+                        if (group.getId().equals(req.getParameter("group").substring(1))) {
+                            data.getDeviceGroups().get(group).add(d);
+                            update.offer(req.getParameter("group").substring(1) + "/" + req.getParameter("id") + "/" + req.getParameter("x") + "/" + req.getParameter("y") + "/" + data.getDeviceGroups().get(group).size());
+                        }
+                    }
+                } else {
+                    for (Iterator<Device> it = data.getDeviceGroups().keySet().iterator(); it.hasNext();) {
+                        Device group = it.next();
+                        if (group.getId().equals(req.getParameter("group").substring(1))) {
+                            update.offer(data.groupToString(group));
+                        }
+                    }
+                }
+            } else {
+                Enumeration<String> e = req.getParameterNames();
+                data.reinitRooms();
+                while (e.hasMoreElements()) {
+                    String s = e.nextElement();
+                    String[] split = req.getParameter(s).split("/");
+                    Room r = new Room(s.substring(4, s.length()), split[0], split[1], split[2], split[3], split[4]);
+                    if (!data.getRooms().contains(r)) {
+                        data.getRooms().add(new Room(s.substring(4, s.length()), split[0], split[1], split[2], split[3], split[4]));
+                        try {
+                            HashMap<String, String> hm = new HashMap<String, String>();
+                            hm.put("X", split[0]);
+                            hm.put("Y", split[1]);
+                            hm.put("Width", split[2]);
+                            hm.put("Height", split[3]);
+                            hm.put("Color", split[4]);
+                            srs.addInstance(s.substring(4, s.length()), "Room", hm);
+                        } catch (Exception ex) {
+                            Logger.getLogger(ControlServlet.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+                update.offer(data.roomsToString());
             }
-            System.out.println(update);
         } else {
             //save the continuation to get the servlet response
             Continuation continuation = ContinuationSupport.getContinuation(req);
@@ -140,17 +288,12 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers {
     @Validate
     public void start() {
         data = new DataTelec();
-        User u = new User("user1", "img/user1.png");
-        u.addDevice(new Device("device3", "html/img/device3.png"));
+        User u = new User("Paul", "img/user1.png");
         data.addUser(u);
-        data.addUser(new User("user2", "img/user2.png"));
-        data.addUser(new User("user3", "img/user3.png"));
-        data.addUser(new User("user4", "img/user4.png"));
-        data.addUser(new User("user5", "img/user5.png"));
-        data.addMap(new Device("device2", "html/img/device2.png", 50, 50));
-        data.addDevice(new Device("device1", "html/img/device1.png"));
-        data.addDevice(new Device("device4", "html/img/device4.png"));
-        data.addDevice(new Device("device5", "html/img/device5.png"));
+        data.addUser(new User("Benoit", "img/user2.png"));
+        data.addUser(new User("Denise", "img/user3.png"));
+        data.addUser(new User("Clemence", "img/user4.png"));
+        data.addUser(new User("Nicolas", "img/user5.png"));
         DEBUG("HTTP Web controler starting");
         if (webContainer != null) {
             try {
@@ -212,19 +355,47 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers {
     }
 
     public void smartObjectAdded(SmartObject so) {
-        update = "adddevice/device" + so.getUID();
-        data.addDevice(new Device("device"+so.getUID(), "html/img/device6.png"));
+        update.offer("adddevice/device" + so.getUID());
+        data.addDevice(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/lightOFF.png", "device" + so.getUID()));
+        if (so.getType().equals(SMART_TYPE.DIMMING_LIGHT)) {
+            String bridge = "SELECT ?bridge WHERE { <http://2012/smart-home#" + so.getUID() + ">"
+                    + "<http://2012/smart-home/relation#MANAGED_BY> ?bridge . }";
+            String res_bridge = srs.sendQuery(bridge);
+            Bridge bridgeInst = dbns.getBridge((res_bridge.split("#"))[1].substring(0, (res_bridge.split("#"))[1].length() - 1));
+            String s = "SELECT ?serv WHERE { <http://2012/smart-home/prototype#UPnP_ON_OFF>"
+                    + "<http://2012/smart-home/relation#SERVICE_ID> ?serv . }";
+            String res_service = srs.sendQuery(s);
+            String[] split = res_service.split("/");
+            String service = split[2].substring(0, split[2].length() - 1);
+            bridgeInst.newServiceSubscribe(this, so.getUID(), service);
+        }
     }
 
     public void smartObjectRemoved(SmartObject so) {
-        data.removeMap(new Device("device"+so.getUID(), "html/img/device6.png"));
-        data.removeDevice(new Device("device"+so.getUID(), "html/img/device6.png"));
-        data.removeUserDevice(new Device("device"+so.getUID(), "html/img/device6.png"));
-        update = "removedevice/device" + so.getUID();
+        data.removeMap(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/lightOFF.png", "device" + so.getUID()));
+        data.removeDevice(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/lightOFF.png", "device" + so.getUID()));
+        data.removeUserDevice(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/lightOFF.png", "device" + so.getUID()));
+        update.offer("removedevice/device" + so.getUID());
     }
 
     public void smartObjectUpdated(SmartObject so) {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Bind
+    public void bindSPARQLRequestService(SPARQLRequestService srs) {
+        this.srs = srs;
+        DEBUG("RDF data base request service subscribe");
+    }
+
+    @Unbind
+    public void unbindSPARQLRequestService(SPARQLRequestService srs) {
+        this.srs = null;
+        DEBUG("RDF data base request service unsubscribe");
+    }
+
+    public void serviceNotify(String UDN, String device, String variable, String value) {
+        update.offer("device" + UDN + "/value=" + value);
     }
     private static final long serialVersionUID = -7578840142400570555L;
     //*******************************
