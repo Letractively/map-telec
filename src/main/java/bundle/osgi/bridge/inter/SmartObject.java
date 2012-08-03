@@ -164,6 +164,9 @@ public class SmartObject {
         //light type
         BINARY_LIGHT,
         DIMMING_LIGHT,
-        COLORED_LIGHT
+        COLORED_LIGHT,
+        //Media type
+        MEDIA_SERVER,
+        MEDIA_RENDERER
     }
 }
