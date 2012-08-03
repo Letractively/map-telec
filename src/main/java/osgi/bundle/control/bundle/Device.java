@@ -4,31 +4,33 @@
  */
 package osgi.bundle.control.bundle;
 
+import bundle.osgi.bridge.inter.SmartObject;
+
 /**
  *
  * @author Joachim
  */
-class Device {
-    private String id;
+class Device extends SmartObject{
     private String img;
+    private String id;
     private float x;
     private float y;
     
-    public Device(String id, String img){
-        this.id = id;
+    public Device(String uid, String name, String bridge, SMART_TYPE st, String img, String id){
+        super(uid, name, bridge, st);
         this.img = img;
+        this.id = id;
         x = 0;
         y = 0;
     }
 
-    public Device(String id, String img, float x, float y) {
-        this.id = id;
+    public Device(String uid, String name, String bridge, SMART_TYPE st, String img, float x, float y, String id) {
+        super(uid, name, bridge, st);
         this.img = img;
+        this.id = id;
         this.x = x;
         this.y = y;
     }
-    
-    
 
     @Override
     public boolean equals(Object obj) {
@@ -49,14 +51,10 @@ class Device {
     public String toString() {
         return "var d1 = new Device('"+id+"','"+img+"');"+
         "document.getElementById('debarraschildren').appendChild(d1);"+
-        "Draggable(d1.id,[d1.id], startDragElement, null,  null);"+
+        "Draggable(d1.id,[d1.id], startDragElement, dragElement, null);"+
         "l.add(d1);";
     }
-
-    public String getId() {
-        return id;
-    }
-
+    
     public String getImg() {
         return img;
     }
@@ -76,7 +74,12 @@ class Device {
     public void setY(float y) {
         this.y = y;
     }
-    
-    
-    
+
+    public String getId() {
+        return id;
+    }
+
+    boolean isNear(Device dev) {
+        return Math.abs(x - dev.getX())<10 && Math.abs(y - dev.getY())<10;
+    }
 }

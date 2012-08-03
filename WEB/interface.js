@@ -1,3 +1,5 @@
+var image = '';
+
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 //Return a XMLHttpRequest
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
@@ -14,7 +16,7 @@ function getXMLHttpRequest() {
         } else {
             xhr = new XMLHttpRequest(); 
         }
-    } else {
+    }else {
         alert("Votre navigateur ne supporte pas l'objet XMLHTTPRequest...");
         return null;
     }
@@ -37,70 +39,208 @@ function removeDevice(device, user_list){
 function updateMap(resp, user_lists, device_list){
     document.getElementById('text_tmp').removeChild(document.getElementById('text_tmp').childNodes[0]);
     document.getElementById('text_tmp').appendChild(document.createTextNode(resp));
-    var c = resp[0];
-    var i = 1;
-    while(i<resp.length && c != '/'){
-        c = resp[i];
-        i++;
-    }
-    if(resp[i] == 'l'){
-        console.log('LIST : '+resp.substring(0,i-1));
-        removeDevice(resp.substring(0,i-1), user_lists[0]);
-        device_list.remove(document.getElementById(resp.substring(0,i-1)));
-        document.getElementById('debarraschildren').appendChild(document.getElementById(resp.substring(0,i-1)));
-        device_list.add(document.getElementById(resp.substring(0,i-1)));
-    }else if(resp[i] == 'u'){
-        console.log('USER : '+resp.substring(0,i-1)+'/'+resp.substring(i,resp.length)+' / '+user_lists[0]);
-        device_list.remove(document.getElementById(resp.substring(0,i-1)));
-        removeDevice(resp.substring(0,i-1), user_lists[0]);
-        var user = user_lists[0][0];
-        var j=0;
-        while(j<user_lists[0].length && user.node.id != resp.substring(i,resp.length)){
-            j++;
-            user = user_lists[0][j];
+    if(resp != undefined){
+        var c = resp[0];
+        var i = 1;
+        while(i<resp.length && c != '/'){
+            c = resp[i];
+            i++;
         }
-        document.getElementById(user.node.getAttribute('gdevices')).appendChild(document.getElementById(resp.substring(0,i-1)));
-        user.list.add(document.getElementById(resp.substring(0,i-1)));
-    }else if(resp[i] == 'm'){
-        console.log('MAP : '+resp.substring(0,i-1));
-        device_list.remove(document.getElementById(resp.substring(0,i-1)));
-        removeDevice(resp.substring(0,i-1), user_lists[0]);
-        var k = i;
-        while(c!=','){
-            c=resp[k];
-            k++;
+        if(resp[i] == 'l'){
+            var device;
+            var bool = false;
+            if(document.getElementById(resp.substring(0,i-1)) != undefined){
+                removeDevice(resp.substring(0,i-1), user_lists[0]);
+                device_list.remove(document.getElementById(resp.substring(0,i-1)));
+                device = document.getElementById(resp.substring(0,i-1));
+            }else{
+                device = new Device(resp.substring(0,i-1), 'html/img/lightOFF.png');
+                bool = true;
+            }
+            document.getElementById('debarraschildren').appendChild(device);
+            device_list.add(device);
+            if(bool) Draggable(device.id,[device.id], startDragElement, dragElement, null);
+            
+        }else if(resp[i] == 'u'){
+            var bool = false;
+            var device;
+            if(document.getElementById(resp.substring(0,i-1)) != undefined){
+                device_list.remove(document.getElementById(resp.substring(0,i-1)));
+                removeDevice(resp.substring(0,i-1), user_lists[0]);
+                device = document.getElementById(resp.substring(0,i-1));
+            }else{
+                device = new Device(resp.substring(0,i-1), 'html/img/lightOFF.png');
+                bool = true;
+            }
+            var user = user_lists[0][0];
+            var j=0;
+            while(j<user_lists[0].length && user.node.id != resp.substring(i,resp.length)){
+                j++;
+                user = user_lists[0][j];
+            }
+            document.getElementById(user.node.getAttribute('gdevices')).appendChild(device);
+            user.list.add(device);
+            if(bool) Draggable(device.id,[device.id], startDragElement, dragElement, null);
+        }else if(resp[i] == 'm'){
+            var device;
+            var bool = false;
+            if(document.getElementById(resp.substring(0,i-1)) != undefined){
+                device_list.remove(document.getElementById(resp.substring(0,i-1)));
+                removeDevice(resp.substring(0,i-1), user_lists[0]);
+                device = document.getElementById(resp.substring(0,i-1));
+            }else{
+                device = new Device(resp.substring(0,i-1), 'html/img/lightOFF.png');
+                bool = true;
+            }
+            var k = i;
+            while(c!=','){
+                c=resp[k];
+                k++;
+            }
+
+            var x = parseFloat(resp.substring(i+4,k-1));
+            var y = parseFloat(resp.substring(k,resp.length));
+            if(x<0) x=0;
+            if(y<0) y=0;
+            var str_mtx = 'matrix(1' 
+            + ', 0'
+            + ', 0'
+            + ', 1'
+            + ', ' + x
+            + ', ' + y
+            + ')';
+            device.setAttribute('transform', str_mtx);
+            document.getElementById('planchildren').appendChild(device);
+            if(bool) Draggable(device.id,[device.id], startDragElement, dragElement, null);
+        }else if(resp.substring(0,i-1)=="adduser"){
+            var u1 = new User('userid','html/img/user1.png',null, 'noname');
+            document.getElementById('userschildren').appendChild(u1.node);
+            u1.setDropZone(new List(document.getElementById(u1.node.id),0,'horizontal'));
+            user_lists[1].add(u1.node);
+            user_lists[0].push(u1);
+        }else if(resp.substring(0,i-1)=="adddevice"){
+            var d1 = new Device(resp.substring(i,resp.length),'html/img/lightOFF.png');
+            document.getElementById('debarraschildren').appendChild(d1);
+            Draggable(d1.id,[d1.id], startDragElement, dragElement,  null);
+            device_list.add(d1);
+        }else if(resp.substring(0,i-1)=="removeuser"){
+
+        }else if(resp.substring(0,i-1)=="removedevice"){
+            device_list.remove(document.getElementById(resp.substring(i,resp.length)));
+            removeDevice(resp.substring(i,resp.length), user_lists[0]);
+            document.getElementById(resp.substring(i,resp.length)).parentNode.removeChild(document.getElementById(resp.substring(i,resp.length)));
+        }else if(resp[i] == 'v'){
+            if(resp.substring(i+6,i+7) == '0'){
+                document.getElementById(resp.substring(0,i-1)).setAttributeNS('http://www.w3.org/1999/xlink','xlink:href','html/img/lightOFF.png');
+            }else{
+                document.getElementById(resp.substring(0,i-1)).setAttributeNS('http://www.w3.org/1999/xlink','xlink:href','html/img/lightON.png');
+            }
+        }else if(resp.substring(0,5) == 'room:'){
+            var split = resp.substring(5,resp.length).split('&');
+            var i;
+            while (document.getElementById('planchildrenrooms').hasChildNodes()) {
+                document.getElementById('planchildrenrooms').removeChild(document.getElementById('planchildrenrooms').lastChild);
+            }
+            var res = 'initMap(new Array(';
+            for(i=0;i<split.length;i++){
+                var s = split[i].split('/');
+                new Room(s[0],s[1],s[2],s[3],s[4],s[5],document.getElementById('planchildrenrooms'),s[0].substring(4,s[0].length));
+                res += '{id:"'+s[0].substring(4,s[0].length)+'",x:"'+s[1]+'",y:"'+ s[2] +'",width:"'+ s[3] +'",height:"'+ s[4] +'",color:"'+ s[5]+'",root:document.getElementById("editmapcanvas")},';
+            }
+            res = res.substring(0, res.length-1);
+            res += '));';
+            document.getElementById('edit').onclick = res;
+            console.log(split);
+        }else if(resp.substring(0,5) == 'data:'){
+            image += resp.substring(5,resp.length);
+        }else if(resp.substring(0,3) == 'fin'){
+            document.body.innerHTML = image;
+        }else if(resp.substring(0,8) == 'newgroup'){
+            var split = resp.split('/');
+            if(document.getElementById(split[4]) != undefined){
+                device_list.remove(document.getElementById(split[4]));
+                removeDevice(split[4], user_lists[0]);
+                document.getElementById(split[4]).parentNode.removeChild(document.getElementById(split[4]));
+            }
+            if(document.getElementById(split[5]) != undefined){
+                device_list.remove(document.getElementById(split[5]));
+                removeDevice(split[5], user_lists[0]);
+                document.getElementById(split[5]).parentNode.removeChild(document.getElementById(split[5]));
+            }
+            var d = new Device(split[1], "html/img/group.png");
+            var xG = parseFloat(split[2]);
+            var yG = parseFloat(split[3]);
+            if(xG<0) xG=0;
+            if(yG<0) yG=0;
+            var str_mtx = 'matrix(1' 
+            + ', 0'
+            + ', 0'
+            + ', 1'
+            + ', ' + xG
+            + ', ' + yG
+            + ')';
+            d.setAttribute('transform', str_mtx);
+            d.addEventListener('click', groupclick, false);
+            d.addEventListener('touchstart', groupclick, false);
+            document.getElementById('planchildren').appendChild(d);
+            console.log('new group !! : '+resp);
+            var t = document.createElementNS("http://www.w3.org/2000/svg","text");
+                t.appendChild(document.createTextNode('2'));
+                t.setAttribute('id','text'+split[1]);
+                t.setAttribute('font-size','12');
+                t.setAttribute('transform',str_mtx);
+            document.getElementById('planchildren').appendChild(t);
+        }else if(resp.substring(0,5) == 'added'){
+            var split = resp.split('/');
+            var save = document.getElementById(split[1]);
+            if(save != undefined){
+                device_list.remove(document.getElementById(split[1]));
+                removeDevice(split[1], user_lists[0]);
+                save.parentNode.removeChild(save);
+            }
+            var t = document.getElementById('text'+split[2]);
+                t.removeChild(t.childNodes[0]);
+                t.appendChild(document.createTextNode(split[3]));
+            if(document.getElementById('children'+split[2]) != undefined){
+                save.setAttribute('x', '0');
+                save.setAttribute('y', '0');
+                save.setAttribute('transform', 'translate(0,0)')
+                document.getElementById('children'+split[2]).appendChild(save);
+            }
+        }else if(resp.substring(0,5) == 'group'){
+            var split = resp.split('/');
+            var save = document.getElementById(split[1]);
+            if(save != undefined){
+                device_list.remove(save);
+                removeDevice(split[1], user_lists[0]);
+                save.parentNode.removeChild(save);
+                if(document.getElementById('children'+split[0]) != undefined){
+                   document.getElementById('children'+split[0]).appendChild(save);
+                    save.setAttribute('transform','translate('+split[2]+','+split[3]+')');
+                }
+            }
+            var t = document.getElementById('text'+split[0]);
+                t.removeChild(t.childNodes[0]);
+                t.appendChild(document.createTextNode(split[4]));
+        }else if(resp.substring(0,9) == 'drawgroup'){
+            var split = resp.split('*');
+            if(document.getElementById('children'+split[1]) != undefined){
+                var node = document.getElementById('children'+split[1]);
+                node.parentNode.removeChild(node);
+                node = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                node.setAttribute('id','children'+split[1]);
+                document.getElementById('g'+split[1]).appendChild(node);
+                var n;
+                for(n = 2;n < split.length;n=n+4){
+                    var d2 = new Device(split[n],split[n+1]);
+                    node.appendChild(d2);
+                    d2.setAttribute('transform','translate('+split[n+2]+','+split[n+3]+')');
+                    Draggable(d2.id,[d2.id], startDragElement, dragElement, null);
+                }
+            }
+        }else{
+            console.log(resp);
         }
-                
-        var x = parseFloat(resp.substring(i+4,k-1));
-        var y = parseFloat(resp.substring(k,resp.length));
-        if(x<0) x=0;
-        if(y<0) y=0;
-        var str_mtx = 'matrix(1' 
-                + ', 0'
-                + ', 0'
-                + ', 1'
-                + ', ' + x
-                + ', ' + y
-                + ')';
-        document.getElementById(resp.substring(0,i-1)).setAttribute('transform', str_mtx);
-        document.getElementById('planchildren').appendChild(document.getElementById(resp.substring(0,i-1)));
-    }else if(resp.substring(0,i-1)=="adduser"){
-        var u1 = new User('userid','html/img/user1.png',null, 'noname');
-        document.getElementById('userschildren').appendChild(u1.node);
-        u1.setDropZone(new List(document.getElementById(u1.node.id),0,'horizontal'));
-        user_lists[1].add(u1.node);
-        user_lists[0].push(u1);
-    }else if(resp.substring(0,i-1)=="adddevice"){
-        var d1 = new Device(resp.substring(i,resp.length),'html/img/device6.png');
-        document.getElementById('debarraschildren').appendChild(d1);
-        Draggable(d1.id,[d1.id], startDragElement, null,  null);
-        device_list.add(d1);
-    }else if(resp.substring(0,i-1)=="removeuser"){
-        
-    }else if(resp.substring(0,i-1)=="removedevice"){
-        device_list.remove(document.getElementById(resp.substring(i,resp.length)));
-        removeDevice(resp.substring(i,resp.length), user_lists[0]);
-        document.getElementById(resp.substring(i,resp.length)).parentNode.removeChild(document.getElementById(resp.substring(i,resp.length)));
     }
 }
 
@@ -112,7 +252,7 @@ function getAjax(user_lists, device_list){
     var xhr = getXMLHttpRequest();
     xhr.onreadystatechange=function(){
         if (xhr.readyState==4 && xhr.status==200){
-            updateMap(xhr.responseText, user_lists, device_list)
+            updateMap(xhr.responseText, user_lists, device_list);
             getAjax(user_lists, device_list);
         }
     };
@@ -150,7 +290,6 @@ function Separator( id, root_node, orientation, gr_node1, gr_node2, taille_ref){
         var or;
         var size;
         var str_mtx = new Array();
-        ;
         var str_mtx_sep;
         var y;
         var y0 = 0;
@@ -179,7 +318,7 @@ function Separator( id, root_node, orientation, gr_node1, gr_node2, taille_ref){
             y = 0;
             x_sep = M.e;
             y_sep = 0;
-            y0 = window.innerHeight - gr_node2[1].getBBox().height;
+            y0 = gr_node2[0].getBBox().height + window.innerHeight/30;
         }
         if(orientation=='horizontal' && (dec>80*window.innerHeight/100 || dec<20*window.innerHeight/100)){
             if(dec>80*window.innerHeight/100){
@@ -334,18 +473,14 @@ function Scrollbar( id, root_node, orientation, scroll_node){
         var y;
         var y_s;
         var child = document.getElementById(root_node.id+'rect');
-        console.log(bbox_scrollnode.height+MAB.f+" / "+MB.f);
         //contraintes
         if(-MAB.f>0){
-            console.log('normal');
             y = MAB.f
             y_s = -MAB.f*(child.getAttribute('height')-bbox_scrollbar.height)/(bbox_scrollnode.height-child.getAttribute('height'));
         }else if(-MAB.f<=0){
-            console.log('haut');
             y_s = 0;
             y = 0;
         }else{
-            console.log('bas');
             y_s = child.getAttribute('height')-bbox_scrollbar.height;
             y = -(bbox_scrollnode.height-child.getAttribute('height'));
         }
@@ -409,20 +544,27 @@ function Container(id, b_scrollbar, width, height, transform){
     if(b_scrollbar){
         var scrollBar = new Scrollbar(id, document.getElementById(id), null, document.getElementById(id+'children'));
     }
+    this.setBackGround = function(background){
+    //        var i = document.createElementNS("http://www.w3.org/2000/svg","image");
+    //        i.setAttributeNS("http://www.w3.org/1999/xlink","xlink:href",background);
+    //        i.setAttribute('id', 'background');
+    //        i.setAttribute('x', '2');
+    //        i.setAttribute('y', '2');
+    //        i.setAttribute('width', this.width-5);
+    //        i.setAttribute('height', this.height-5);
+    //        document.getElementById('plan').insertBefore(i, document.getElementById('planchildren'));
+    }
     this.setDropZone = function(list){
         Drop_zone(this.id, '*', 
             function(z, n, e) {
-                console.log("startD");
             //if(list!=undefined && list.indexOf(n) != -1)
             //  list.remove(n);
             }, 	function(z, n, e) {
-                console.log("hoverD");
             }, function(z, n, e) {
-                console.log("outD");
             }, function(z, n, e) {
-                console.log("doneD");
             }, function(z, n, e) {
-                console.log("undoneD");
+                if(z.node.id == n.parentNode.parentNode.id && n.id.slice(0,6) == 'device')
+                    init_iframe(n.id,n.getAttributeNS('http://www.w3.org/1999/xlink','xlink:href'));
             }, function(z, n, e) {
                 if(n.id.slice(0,6) == 'device'){
                     endDrageElement(n);
@@ -448,9 +590,16 @@ function Container(id, b_scrollbar, width, height, transform){
                     }
                     else{
                         var xhr = getXMLHttpRequest();
+                        var rect = n.getBBox();
+                        rect.x = n.getBBox().width/2+n.getCTM().e;
+                        rect.y = n.getBBox().height/2+n.getCTM().f;
+                        rect.width = '1';
+                        rect.height = '1';
+                        var tmp = document.getElementById('mon_canvas').getIntersectionList(rect, document.getElementById('planchildrenrooms'));
+                        console.log(tmp);
                         xhr.open("POST", "index.xhtml", true);
                         xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
-                        xhr.send("map="+n.getAttribute('id')+"&x="+MAB.e+"&y="+MAB.f+"&img="+n.getAttribute('href'));
+                        xhr.send("map="+n.getAttribute('id')+"&x="+MAB.e+"&y="+MAB.f+"&img="+n.getAttribute('href')+"&room="+tmp);
                     }
                 }
             }
@@ -628,12 +777,10 @@ function User(user, img, devices, name){
         var i;
         this.list = list;
         for(i=0; i<this.devices.length;i++){
-            console.log(this.devices[i]);
             document.getElementById(this.node.getAttribute('id')+'_devices').appendChild(this.devices[i]);
-            Draggable(this.devices[i].id,[this.devices[i].id], startDragElement, null,  null);
+            Draggable(this.devices[i].id,[this.devices[i].id], startDragElement, dragElement,  null);
             list.add(this.devices[i]);
         }
-        console.log(list);
         Drop_zone(this.node.id, '*', 
             function(z, n, e) {
             //if(list!=undefined && list.indexOf(n) != -1)
@@ -642,6 +789,8 @@ function User(user, img, devices, name){
             }, function(z, n, e) {
             }, function(z, n, e) {
             }, function(z, n, e) {
+                if(z.node.id == n.parentNode.parentNode.id)
+                    init_iframe(n.id,n.getAttributeNS('http://www.w3.org/1999/xlink','xlink:href'));
             }, function(z, n, e) {
                 if(n.id.slice(0,6) == 'device'){
                     endDrageElement(n);
@@ -662,9 +811,16 @@ function User(user, img, devices, name){
 }
 
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
-//Methode call when an element is drag
+//Method call when an element is touch
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function startDragElement(n,e){
+    console.log('DEBUG');
+}
+
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+//Method call when an element is drag
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+function dragElement(n,e){
     var MAm = document.getElementById('main').getCTM().inverse();
     var MB  = n.getCTM();
     var MAB = MAm.multiply( MB );
@@ -681,10 +837,44 @@ function startDragElement(n,e){
     n.parentNode.removeChild(n);
     document.getElementById('main').appendChild(n);
 }
+
 			
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 //Method call when an element is drop
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function endDrageElement(n){
     n.style.opacity = "1";
+}
+
+function init_iframe(id,src){
+    var i = document.createElement('iframe');
+    if(src == 'html/img/lightON.png'){
+        i.setAttribute('src','http://194.199.23.251:8080/lamp?device='+id+"&value=1");
+    }else{
+        i.setAttribute('src','http://194.199.23.251:8080/lamp?device='+id+"&value=0");
+    }
+    i.setAttribute('scrolling','no');
+    i.setAttribute('style','position:absolute;top: 5px; left: 5px;width: 285px; height: 285px;background-color:white');
+    i.setAttribute('align','middle');
+    var d = new Dialog(id, i);
+}
+
+function close_iframe(id){
+    document.getElementById('iframe'+id).parentNode.removeChild(document.getElementById('iframe'+id));
+}
+
+function groupclick(event){
+    new Group(event.target.id, 'planchildren');
+    document.getElementById(event.target.id).removeEventListener('click', groupclick, false);
+    document.getElementById(event.target.id).removeEventListener('touchstart', groupclick, false);
+    document.getElementById(event.target.id).addEventListener('click', groupendclick, false);
+    document.getElementById(event.target.id).addEventListener('touchstart', groupendclick, false);
+}
+
+function groupendclick(event){
+    document.getElementById('g'+event.target.id).parentNode.removeChild(document.getElementById('g'+event.target.id));
+    document.getElementById(event.target.id).removeEventListener('click', groupendclick, false);
+    document.getElementById(event.target.id).removeEventListener('touchstart', groupendclick, false);
+    document.getElementById(event.target.id).addEventListener('click', groupclick, false);
+    document.getElementById(event.target.id).addEventListener('touchstart', groupclick, false);
 }

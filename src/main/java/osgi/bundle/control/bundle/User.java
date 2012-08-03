@@ -41,6 +41,10 @@ class User {
         devices.remove(d);
     }
 
+    public ArrayList<Device> getDevices() {
+        return devices;
+    }
+    
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
