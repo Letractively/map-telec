@@ -37,8 +37,8 @@ function removeDevice(device, user_list){
 //Update the interface for each request
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function updateMap(resp, user_lists, device_list){
-    document.getElementById('text_tmp').removeChild(document.getElementById('text_tmp').childNodes[0]);
-    document.getElementById('text_tmp').appendChild(document.createTextNode(resp));
+//    document.getElementById('text_tmp').removeChild(document.getElementById('text_tmp').childNodes[0]);
+//    document.getElementById('text_tmp').appendChild(document.createTextNode(resp));
     if(resp != undefined){
         var c = resp[0];
         var i = 1;
@@ -74,7 +74,7 @@ function updateMap(resp, user_lists, device_list){
             }
             var user = user_lists[0][0];
             var j=0;
-            while(j<user_lists[0].length && user.node.id != resp.substring(i,resp.length)){
+            while(j<user_lists[0].length && user.node.id != resp.substring(i+1,resp.length)){
                 j++;
                 user = user_lists[0][j];
             }
