@@ -1,4 +1,4 @@
-﻿// Drop_zone('CPool_COMET_2_drop_circle', '*', null, null, null, null);
+// Drop_zone('CPool_COMET_2_drop_circle', '*', null, null, null, null);
 // Draggable('CPool_COMET_2', ['CPool_COMET_2_drag'], null, null, function(n, e) {});
 // drag_info_obj.svg_rect.x = 0; drag_info_obj.svg_rect.y = 0; drag_info_obj.svg_rect.width = 1; drag_info_obj.svg_rect.height = 1;
 //___________________________________________________________________________________________________________________________________________
