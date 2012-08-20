@@ -1,5 +1,7 @@
 package bundle.osgi.bridge.inter;
 
+import java.util.HashMap;
+
 /**
  *
  * @author Cedric Gerard
@@ -17,5 +19,5 @@ public interface Launcher {
      *
      * @param info all the mandatory informations for the launcher object
      */
-    public void callBack(String info);
+    public void callBack(HashMap<String, String> info);
 }

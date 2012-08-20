@@ -37,8 +37,8 @@ function removeDevice(device, user_list){
 //Update the interface for each request
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function updateMap(resp, user_lists, device_list){
-//    document.getElementById('text_tmp').removeChild(document.getElementById('text_tmp').childNodes[0]);
-//    document.getElementById('text_tmp').appendChild(document.createTextNode(resp));
+    //    document.getElementById('text_tmp').removeChild(document.getElementById('text_tmp').childNodes[0]);
+    //    document.getElementById('text_tmp').appendChild(document.createTextNode(resp));
     if(resp != undefined){
         var c = resp[0];
         var i = 1;
@@ -54,6 +54,8 @@ function updateMap(resp, user_lists, device_list){
                 device_list.remove(document.getElementById(resp.substring(0,i-1)));
                 device = document.getElementById(resp.substring(0,i-1));
             }else{
+                split = resp.split("/", 10);
+                //TODO image en dur, stupide !!!!! A remplacer par l'image correspondant au type de l'objet
                 device = new Device(resp.substring(0,i-1), 'html/img/lightOFF.png');
                 bool = true;
             }
@@ -69,6 +71,7 @@ function updateMap(resp, user_lists, device_list){
                 removeDevice(resp.substring(0,i-1), user_lists[0]);
                 device = document.getElementById(resp.substring(0,i-1));
             }else{
+                 //TODO image en dur, stupide !!!!! A remplacer par l'image correspondant au type de l'objet
                 device = new Device(resp.substring(0,i-1), 'html/img/lightOFF.png');
                 bool = true;
             }
@@ -89,6 +92,7 @@ function updateMap(resp, user_lists, device_list){
                 removeDevice(resp.substring(0,i-1), user_lists[0]);
                 device = document.getElementById(resp.substring(0,i-1));
             }else{
+                 //TODO image en dur, stupide !!!!! A remplacer par l'image correspondant au type de l'objet
                 device = new Device(resp.substring(0,i-1), 'html/img/lightOFF.png');
                 bool = true;
             }
@@ -119,7 +123,8 @@ function updateMap(resp, user_lists, device_list){
             user_lists[1].add(u1.node);
             user_lists[0].push(u1);
         }else if(resp.substring(0,i-1)=="adddevice"){
-            var d1 = new Device(resp.substring(i,resp.length),'html/img/lightOFF.png');
+            var split = resp.split("/", 10);
+            var d1 = new Device(resp.substring(i,resp.length),'html/img/'+split[2]);
             document.getElementById('debarraschildren').appendChild(d1);
             Draggable(d1.id,[d1.id], startDragElement, dragElement,  null);
             device_list.add(d1);
@@ -129,12 +134,9 @@ function updateMap(resp, user_lists, device_list){
             device_list.remove(document.getElementById(resp.substring(i,resp.length)));
             removeDevice(resp.substring(i,resp.length), user_lists[0]);
             document.getElementById(resp.substring(i,resp.length)).parentNode.removeChild(document.getElementById(resp.substring(i,resp.length)));
-        }else if(resp[i] == 'v'){
-            if(resp.substring(i+6,i+7) == '0'){
-                document.getElementById(resp.substring(0,i-1)).setAttributeNS('http://www.w3.org/1999/xlink','xlink:href','html/img/lightOFF.png');
-            }else{
-                document.getElementById(resp.substring(0,i-1)).setAttributeNS('http://www.w3.org/1999/xlink','xlink:href','html/img/lightON.png');
-            }
+        }else if(resp[i] == 'v'){ //value
+            split = resp.split("/", 10);
+            document.getElementById(resp.substring(0,i-1)).setAttributeNS('http://www.w3.org/1999/xlink','xlink:href', 'html/img/'+split[2]);
         }else if(resp.substring(0,5) == 'room:'){
             var split = resp.substring(5,resp.length).split('&');
             var i;
@@ -185,10 +187,10 @@ function updateMap(resp, user_lists, device_list){
             document.getElementById('planchildren').appendChild(d);
             console.log('new group !! : '+resp);
             var t = document.createElementNS("http://www.w3.org/2000/svg","text");
-                t.appendChild(document.createTextNode('2'));
-                t.setAttribute('id','text'+split[1]);
-                t.setAttribute('font-size','12');
-                t.setAttribute('transform',str_mtx);
+            t.appendChild(document.createTextNode('2'));
+            t.setAttribute('id','text'+split[1]);
+            t.setAttribute('font-size','12');
+            t.setAttribute('transform',str_mtx);
             document.getElementById('planchildren').appendChild(t);
         }else if(resp.substring(0,5) == 'added'){
             var split = resp.split('/');
@@ -199,8 +201,8 @@ function updateMap(resp, user_lists, device_list){
                 save.parentNode.removeChild(save);
             }
             var t = document.getElementById('text'+split[2]);
-                t.removeChild(t.childNodes[0]);
-                t.appendChild(document.createTextNode(split[3]));
+            t.removeChild(t.childNodes[0]);
+            t.appendChild(document.createTextNode(split[3]));
             if(document.getElementById('children'+split[2]) != undefined){
                 save.setAttribute('x', '0');
                 save.setAttribute('y', '0');
@@ -215,13 +217,13 @@ function updateMap(resp, user_lists, device_list){
                 removeDevice(split[1], user_lists[0]);
                 save.parentNode.removeChild(save);
                 if(document.getElementById('children'+split[0]) != undefined){
-                   document.getElementById('children'+split[0]).appendChild(save);
+                    document.getElementById('children'+split[0]).appendChild(save);
                     save.setAttribute('transform','translate('+split[2]+','+split[3]+')');
                 }
             }
             var t = document.getElementById('text'+split[0]);
-                t.removeChild(t.childNodes[0]);
-                t.appendChild(document.createTextNode(split[4]));
+            t.removeChild(t.childNodes[0]);
+            t.appendChild(document.createTextNode(split[4]));
         }else if(resp.substring(0,9) == 'drawgroup'){
             var split = resp.split('*');
             if(document.getElementById('children'+split[1]) != undefined){
@@ -850,9 +852,9 @@ function init_iframe(id,src){
     var i = document.createElement('iframe');
     //TODO: attetion adresse IP de l usine en dur
     if(src == 'html/img/lightON.png'){
-        i.setAttribute('src','http://194.199.23.251:8080/lamp?device='+id+"&value=1");
+        i.setAttribute('src','http://192.168.1.18:8080/lamp?device='+id+"&value=1");
     }else{
-        i.setAttribute('src','http://194.199.23.251:8080/lamp?device='+id+"&value=0");
+        i.setAttribute('src','http://192.168.1.18:8080/lamp?device='+id+"&value=0");
     }
     i.setAttribute('scrolling','no');
     i.setAttribute('style','position:absolute;top: 5px; left: 5px;width: 285px; height: 285px;background-color:white');

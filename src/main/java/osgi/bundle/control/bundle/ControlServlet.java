@@ -13,12 +13,11 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.felix.ipojo.annotations.*;
+import org.eclipse.jetty.continuation.Continuation;
+import org.eclipse.jetty.continuation.ContinuationSupport;
 import org.ops4j.pax.web.service.WebContainer;
 import org.osgi.service.http.HttpContext;
 import org.osgi.service.http.NamespaceException;
-import org.eclipse.jetty.continuation.Continuation;
-import org.eclipse.jetty.continuation.ContinuationSupport;
-import org.eclipse.jetty.server.handler.ContextHandler;
 
 /**
  * @author Cedric Gerard
@@ -355,9 +354,9 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers, 
     }
 
     public void smartObjectAdded(SmartObject so) {
-        update.offer("adddevice/device" + so.getUID());
-        data.addDevice(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/lightOFF.png", "device" + so.getUID()));
         if (so.getType().equals(SMART_TYPE.DIMMING_LIGHT)) {
+            update.offer("adddevice/device" + so.getUID()+"/lightOFF.png");
+            data.addDevice(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/lightOFF.png", "device" + so.getUID()));
             String bridge = "SELECT ?bridge WHERE { <http://2012/smart-home#" + so.getUID() + ">"
                     + "<http://2012/smart-home/relation#MANAGED_BY> ?bridge . }";
             String res_bridge = srs.sendQuery(bridge);
@@ -368,13 +367,29 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers, 
             String[] split = res_service.split("/");
             String service = split[2].substring(0, split[2].length() - 1);
             bridgeInst.newServiceSubscribe(this, so.getUID(), service);
+        }else if(so.getType().equals(SMART_TYPE.MEDIA_RENDERER)){
+            update.offer("adddevice/device" + so.getUID()+"/renderer.png");
+            data.addDevice(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/renderer.png", "device" + so.getUID()));
+        }else if(so.getType().equals(SMART_TYPE.MEDIA_SERVER)){
+            update.offer("adddevice/device" + so.getUID()+"/media_server.png");
+            data.addDevice(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/media_server.png", "device" + so.getUID()));
+        }else{
+            update.offer("adddevice/device" + so.getUID()+"/unknown.png");
+            data.addDevice(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/unknown.png", "device" + so.getUID()));
         }
     }
 
     public void smartObjectRemoved(SmartObject so) {
-        data.removeMap(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/lightOFF.png", "device" + so.getUID()));
-        data.removeDevice(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/lightOFF.png", "device" + so.getUID()));
-        data.removeUserDevice(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/lightOFF.png", "device" + so.getUID()));
+        Device device;
+        if (so.getType().equals(SMART_TYPE.DIMMING_LIGHT)) {
+           device = new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/lightOFF.png", "device" + so.getUID());
+        } else {
+           device = new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/unknown.png", "device" + so.getUID());
+        }
+        
+        data.removeMap(device);
+        data.removeDevice(device);
+        data.removeUserDevice(device);
         update.offer("removedevice/device" + so.getUID());
     }
 
@@ -395,7 +410,11 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers, 
     }
 
     public void serviceNotify(String UDN, String device, String variable, String value) {
-        update.offer("device" + UDN + "/value=" + value);
+        if(value.contentEquals("0")){
+            update.offer("device" + UDN + "/value/" + "lightOFF.png");
+        }else{
+            update.offer("device" + UDN + "/value/" + "lightON.png");
+        }
     }
     private static final long serialVersionUID = -7578840142400570555L;
     //*******************************
