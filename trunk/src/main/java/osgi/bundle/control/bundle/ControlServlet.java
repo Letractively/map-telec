@@ -4,6 +4,7 @@ import bundle.osgi.bridge.inter.*;
 import bundle.osgi.bridge.inter.SmartObject.SMART_TYPE;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
@@ -73,6 +74,11 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers, 
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        //Getting the local(server) IP adress for iframe set up
+        InetAddress addr = InetAddress.getLocalHost();
+        String ip = addr.getHostAddress();
+        DEBUG("I'm located at "+ip);
+        
         PrintWriter out = resp.getWriter();
         resp.setContentType("text/html");
         out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -82,6 +88,7 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers, 
                 + " <title>Interface_SVG</title>"
                 + " <meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml\" />"
                 + " <meta name=\"viewport\" content=\"width=device-width\"/>"
+                + " <meta name=\"ip\" content=\""+ip+"\"/>"
                 + " <link rel=\"stylesheet\" href=\"html/style_svg.css\"></link>"
                 + " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/COMET_SVG_utilities.js\"></script>"
                 + " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/jquery-1.7.2.js\"></script>"
@@ -355,7 +362,7 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers, 
 
     public void smartObjectAdded(SmartObject so) {
         if (so.getType().equals(SMART_TYPE.DIMMING_LIGHT)) {
-            update.offer("adddevice/device" + so.getUID()+"/lightOFF.png");
+            update.offer("adddevice/device" + so.getUID()+"/lightOFF.png/"+so.getType());
             data.addDevice(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/lightOFF.png", "device" + so.getUID()));
             String bridge = "SELECT ?bridge WHERE { <http://2012/smart-home#" + so.getUID() + ">"
                     + "<http://2012/smart-home/relation#MANAGED_BY> ?bridge . }";
@@ -368,13 +375,13 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers, 
             String service = split[2].substring(0, split[2].length() - 1);
             bridgeInst.newServiceSubscribe(this, so.getUID(), service);
         }else if(so.getType().equals(SMART_TYPE.MEDIA_RENDERER)){
-            update.offer("adddevice/device" + so.getUID()+"/renderer.png");
+            update.offer("adddevice/device" + so.getUID()+"/renderer.png/"+so.getType());
             data.addDevice(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/renderer.png", "device" + so.getUID()));
         }else if(so.getType().equals(SMART_TYPE.MEDIA_SERVER)){
-            update.offer("adddevice/device" + so.getUID()+"/media_server.png");
+            update.offer("adddevice/device" + so.getUID()+"/media_server.png/"+so.getType());
             data.addDevice(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/media_server.png", "device" + so.getUID()));
         }else{
-            update.offer("adddevice/device" + so.getUID()+"/unknown.png");
+            update.offer("adddevice/device" + so.getUID()+"/unknown.png/"+so.getType());
             data.addDevice(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/unknown.png", "device" + so.getUID()));
         }
     }

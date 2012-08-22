@@ -49,7 +49,7 @@ class Device extends SmartObject{
 
     @Override
     public String toString() {
-        return "var d1 = new Device('"+id+"','"+img+"');"+
+        return "var d1 = new Device('"+id+"','"+img+"','"+getType()+"');"+
         "document.getElementById('debarraschildren').appendChild(d1);"+
         "Draggable(d1.id,[d1.id], startDragElement, dragElement, null);"+
         "l.add(d1);";

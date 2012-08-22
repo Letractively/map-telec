@@ -71,7 +71,7 @@ function updateMap(resp, user_lists, device_list){
                 removeDevice(resp.substring(0,i-1), user_lists[0]);
                 device = document.getElementById(resp.substring(0,i-1));
             }else{
-                 //TODO image en dur, stupide !!!!! A remplacer par l'image correspondant au type de l'objet
+                //TODO image en dur, stupide !!!!! A remplacer par l'image correspondant au type de l'objet
                 device = new Device(resp.substring(0,i-1), 'html/img/lightOFF.png');
                 bool = true;
             }
@@ -92,7 +92,7 @@ function updateMap(resp, user_lists, device_list){
                 removeDevice(resp.substring(0,i-1), user_lists[0]);
                 device = document.getElementById(resp.substring(0,i-1));
             }else{
-                 //TODO image en dur, stupide !!!!! A remplacer par l'image correspondant au type de l'objet
+                //TODO image en dur, stupide !!!!! A remplacer par l'image correspondant au type de l'objet
                 device = new Device(resp.substring(0,i-1), 'html/img/lightOFF.png');
                 bool = true;
             }
@@ -124,7 +124,7 @@ function updateMap(resp, user_lists, device_list){
             user_lists[0].push(u1);
         }else if(resp.substring(0,i-1)=="adddevice"){
             var split = resp.split("/", 10);
-            var d1 = new Device(resp.substring(i,resp.length),'html/img/'+split[2]);
+            var d1 = new Device(split[1],'html/img/'+split[2],split[3]);
             document.getElementById('debarraschildren').appendChild(d1);
             Draggable(d1.id,[d1.id], startDragElement, dragElement,  null);
             device_list.add(d1);
@@ -169,7 +169,7 @@ function updateMap(resp, user_lists, device_list){
                 removeDevice(split[5], user_lists[0]);
                 document.getElementById(split[5]).parentNode.removeChild(document.getElementById(split[5]));
             }
-            var d = new Device(split[1], "html/img/group.png");
+            var d = new Device(split[1], "html/img/group.png", "group");
             var xG = parseFloat(split[2]);
             var yG = parseFloat(split[3]);
             if(xG<0) xG=0;
@@ -302,7 +302,7 @@ function Separator( id, root_node, orientation, gr_node1, gr_node2, taille_ref){
             x = document.getElementById('separatorestouest').getCTM().e+document.getElementById('separatorestouest').getBBox().width;
             x_sep = x;
         }
-        else{
+        else{ //Separation north/south in the ouest box(left)
             x = 0;
             x_sep = x;
         }
@@ -566,7 +566,7 @@ function Container(id, b_scrollbar, width, height, transform){
             }, function(z, n, e) {
             }, function(z, n, e) {
                 if(z.node.id == n.parentNode.parentNode.id && n.id.slice(0,6) == 'device')
-                    init_iframe(n.id,n.getAttributeNS('http://www.w3.org/1999/xlink','xlink:href'));
+                    init_iframe(n.id,n.getAttributeNS('http://www.w3.org/1999/xlink','href'));
             }, function(z, n, e) {
                 if(n.id.slice(0,6) == 'device'){
                     endDrageElement(n);
@@ -718,7 +718,7 @@ function List(root_node, dec,orientation){
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 //Create a new device device with the image img
 //______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
-function Device(device, img){
+function Device(device, img, type){
     var svgNS = "http://www.w3.org/2000/svg";
     var xlinkNS = "http://www.w3.org/1999/xlink";
     var width = 64;
@@ -726,6 +726,7 @@ function Device(device, img){
     var i = document.createElementNS(svgNS,"image");
     i.setAttributeNS(xlinkNS,"xlink:href",img);
     i.setAttribute("id",device);
+    i.setAttribute("type",type);
     i.setAttribute("x",'0');
     i.setAttribute("y",'0');
     i.setAttribute("width",width+'px');
@@ -792,7 +793,7 @@ function User(user, img, devices, name){
             }, function(z, n, e) {
             }, function(z, n, e) {
                 if(z.node.id == n.parentNode.parentNode.id)
-                    init_iframe(n.id,n.getAttributeNS('http://www.w3.org/1999/xlink','xlink:href'));
+                    init_iframe(n.id,n.getAttributeNS('http://www.w3.org/1999/xlink','href'));
             }, function(z, n, e) {
                 if(n.id.slice(0,6) == 'device'){
                     endDrageElement(n);
@@ -850,12 +851,33 @@ function endDrageElement(n){
 
 function init_iframe(id,src){
     var i = document.createElement('iframe');
-    //TODO: attetion adresse IP de l usine en dur
-    if(src == 'html/img/lightON.png'){
-        i.setAttribute('src','http://192.168.1.18:8080/lamp?device='+id+"&value=1");
-    }else{
-        i.setAttribute('src','http://192.168.1.18:8080/lamp?device='+id+"&value=0");
+    //Collect the server ip adresse form meta data
+    var ip;
+    g_metadata = document.getElementsByTagName("meta");
+    var len = g_metadata.length;
+    for (var j = 0; j < len; j++) 
+        if (g_metadata[j].name == 'ip') 
+            ip = g_metadata[j].content;
+    //End ip collect
+    
+    //Get the type for the current device
+    var type = document.getElementById(id).getAttribute("type");
+    //type retreived
+
+    if(type == 'DIMMING_LIGHT'){
+        if(src == 'html/img/lightON.png')
+            i.setAttribute('src','http://'+ip+':8080/gui_factory?device='+id+"&value=1");
+        else if(src == 'html/img/lightOFF.png')
+            i.setAttribute('src','http://'+ip+':8080/gui_factory?device='+id+"&value=0");
+    }else if(type == 'BINARY_LIGHT'){
+        if(src == 'html/img/lightON.png')
+            i.setAttribute('src','http://'+ip+':8080/gui_factory?device='+id+"&value=1");
+        else
+            i.setAttribute('src','http://'+ip+':8080/gui_factory?device='+id+"&value=0");
+    }else if(type == 'MEDIA_RENDERER'){
+        i.setAttribute('src','http://'+ip+':8080/gui_factory?device='+id);
     }
+
     i.setAttribute('scrolling','no');
     i.setAttribute('style','position:absolute;top: 5px; left: 5px;width: 285px; height: 285px;background-color:white');
     i.setAttribute('align','middle');
