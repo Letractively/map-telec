@@ -849,10 +849,13 @@ function endDrageElement(n){
     n.style.opacity = "1";
 }
 
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+//Method call when an element is click to creating a new iframe
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
 function init_iframe(id,src){
     var i = document.createElement('iframe');
     //Collect the server ip adresse form meta data
-    var ip;
+    var ip,w,h;
     g_metadata = document.getElementsByTagName("meta");
     var len = g_metadata.length;
     for (var j = 0; j < len; j++) 
@@ -863,7 +866,8 @@ function init_iframe(id,src){
     //Get the type for the current device
     var type = document.getElementById(id).getAttribute("type");
     //type retreived
-
+    w = 300; // default width
+    h = 300; // default height
     if(type == 'DIMMING_LIGHT'){
         if(src == 'html/img/lightON.png')
             i.setAttribute('src','http://'+ip+':8080/gui_factory?device='+id+"&value=1");
@@ -875,13 +879,15 @@ function init_iframe(id,src){
         else
             i.setAttribute('src','http://'+ip+':8080/gui_factory?device='+id+"&value=0");
     }else if(type == 'MEDIA_RENDERER'){
+        h = 430;
+        w = 335;
         i.setAttribute('src','http://'+ip+':8080/gui_factory?device='+id);
     }
 
     i.setAttribute('scrolling','no');
-    i.setAttribute('style','position:absolute;top: 5px; left: 5px;width: 285px; height: 285px;background-color:white');
+    i.setAttribute('style','position:absolute;top: 5px; left: 5px;width: '+(w-15)+'px; height: '+(h-15)+'px;background-color:white');
     i.setAttribute('align','middle');
-    var d = new Dialog(id, i);
+    var d = new Dialog(id, i, w, h);
 }
 
 function close_iframe(id){
