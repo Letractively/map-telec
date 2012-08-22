@@ -1,4 +1,4 @@
-function Dialog(id, content){
+function Dialog(id, content, width, height){
 	this.id = id;
 	this.x_old;
 	this.y_old;
@@ -52,7 +52,7 @@ function Dialog(id, content){
 	
 	var tomove = document.createElement('div');
 		tomove.setAttribute('id','tomove'+id);
-		tomove.setAttribute('style','width: 300px; height: 50px;	background: #eee none; border: 1px solid #ddd; cursor: move; position: relative;')
+		tomove.setAttribute('style','width: '+width+'px; height: 50px;	background: #eee none; border: 1px solid #ddd; cursor: move; position: relative;')
 		tomove.addEventListener('mousedown', (function(obj_dia) {return (function(event) {obj_dia.mousedown(obj_dia, event);})})(this), true);
 		tomove.addEventListener('mousemove', (function(obj_dia) {return (function(event) {obj_dia.mousemove(obj_dia, event);})})(this), true);
 		tomove.addEventListener('mouseup', (function(obj_dia) {return (function(event) {obj_dia.mouseup(obj_dia, event);})})(this), true);
@@ -61,7 +61,7 @@ function Dialog(id, content){
 		tomove.addEventListener('touchend', (function(obj_dia) {return (function(event) {obj_dia.touchEnd(obj_dia, event);})})(this), true);
 	var close = document.createElement('div');
 		close.setAttribute('id','close'+id);
-		close.setAttribute('style','width: 30px; height: 30px; position: relative; top: 10px; left: 260px; cursor: pointer');
+		close.setAttribute('style','width: 30px; height: 30px; position: relative; top: 10px; left: '+(width-40)+'px; cursor: pointer');
 		close.addEventListener('click', (function(obj_dia) {return (function(event) {obj_dia.onclose(obj_dia, event);})})(this),true);
                 close.addEventListener('touchstart', (function(obj_dia) {return (function(event) {obj_dia.onclose(obj_dia, event);})})(this),true);
 	var img = document.createElement('img');
@@ -70,7 +70,7 @@ function Dialog(id, content){
 		img.setAttribute('height','auto');
 	var frame = document.createElement('div');
 		frame.setAttribute('id','frame'+id);
-		frame.setAttribute('style','width: 300px; height: 300px;	background: #eee none; border: 1px solid #ddd; position: relative;');
+		frame.setAttribute('style','width: '+width+'px; height: '+height+'px;	background: #eee none; border: 1px solid #ddd; position: relative;');
 		
 	document.body.appendChild(this.dialog);
 	this.dialog.appendChild(tomove);
