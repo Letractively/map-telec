@@ -4,6 +4,7 @@ import bundle.osgi.bridge.inter.*;
 import bundle.osgi.bridge.inter.SmartObject.SMART_TYPE;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -16,9 +17,14 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.felix.ipojo.annotations.*;
 import org.eclipse.jetty.continuation.Continuation;
 import org.eclipse.jetty.continuation.ContinuationSupport;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
 import org.ops4j.pax.web.service.WebContainer;
 import org.osgi.service.http.HttpContext;
 import org.osgi.service.http.NamespaceException;
+import org.xml.sax.InputSource;
 
 /**
  * @author Cedric Gerard
@@ -77,8 +83,8 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers, 
         //Getting the local(server) IP adress for iframe set up
         InetAddress addr = InetAddress.getLocalHost();
         String ip = addr.getHostAddress();
-        DEBUG("I'm located at "+ip);
-        
+        DEBUG("I'm located at " + ip);
+
         PrintWriter out = resp.getWriter();
         resp.setContentType("text/html");
         out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -88,7 +94,7 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers, 
                 + " <title>Interface_SVG</title>"
                 + " <meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml\" />"
                 + " <meta name=\"viewport\" content=\"width=device-width\"/>"
-                + " <meta name=\"ip\" content=\""+ip+"\"/>"
+                + " <meta name=\"ip\" content=\"" + ip + "\"/>"
                 + " <link rel=\"stylesheet\" href=\"html/style_svg.css\"></link>"
                 + " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/COMET_SVG_utilities.js\"></script>"
                 + " <script language=\"JavaScript\" type=\"text/javascript\" src=\"html/jquery-1.7.2.js\"></script>"
@@ -112,8 +118,8 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers, 
                 + "<svg id=\"editmapcanvas\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" version=\"1.1\">"
                 + "</svg>"
                 + "<img id='edit' src='html/img/edit.png' width='32' height='32' onclick=\"initMap(new Array(" + data.roomsToStringScript() + "));\"></img>"
-//                + "<div id='screen'></div>"
-//                + "<button id='screenbutton' style=\"position: absolute;top:100;left:100\" onclick=\"initScreen();\">Screen</button>"
+                //                + "<div id='screen'></div>"
+                //                + "<button id='screenbutton' style=\"position: absolute;top:100;left:100\" onclick=\"initScreen();\">Screen</button>"
                 + "</body>"
                 + " </html>");
     }
@@ -361,8 +367,9 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers, 
     }
 
     public void smartObjectAdded(SmartObject so) {
+
         if (so.getType().equals(SMART_TYPE.DIMMING_LIGHT)) {
-            update.offer("adddevice/device" + so.getUID()+"/lightOFF.png/"+so.getType());
+            update.offer("adddevice/device" + so.getUID() + "/lightOFF.png/" + so.getType());
             data.addDevice(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/lightOFF.png", "device" + so.getUID()));
             String bridge = "SELECT ?bridge WHERE { <http://2012/smart-home#" + so.getUID() + ">"
                     + "<http://2012/smart-home/relation#MANAGED_BY> ?bridge . }";
@@ -374,14 +381,35 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers, 
             String[] split = res_service.split("/");
             String service = split[2].substring(0, split[2].length() - 1);
             bridgeInst.newServiceSubscribe(this, so.getUID(), service);
-        }else if(so.getType().equals(SMART_TYPE.MEDIA_RENDERER)){
-            update.offer("adddevice/device" + so.getUID()+"/renderer.png/"+so.getType());
+
+        } else if (so.getType().equals(SMART_TYPE.MEDIA_RENDERER)) {
+            update.offer("adddevice/device" + so.getUID() + "/renderer.png/" + so.getType());
             data.addDevice(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/renderer.png", "device" + so.getUID()));
-        }else if(so.getType().equals(SMART_TYPE.MEDIA_SERVER)){
-            update.offer("adddevice/device" + so.getUID()+"/media_server.png/"+so.getType());
+
+            String bridge = "SELECT ?bridge WHERE { <http://2012/smart-home#" + so.getUID() + ">"
+                    + "<http://2012/smart-home/relation#MANAGED_BY> ?bridge . }";
+            String res_bridge = srs.sendQuery(bridge);
+            Bridge bridgeInst = dbns.getBridge((res_bridge.split("#"))[1].substring(0, (res_bridge.split("#"))[1].length() - 1));
+
+            String service = "SELECT ?serv WHERE { <http://2012/smart-home/prototype#UPnP_SET_MUTE>"
+                    + "<http://2012/smart-home/relation#SERVICE_ID> ?serv . }";
+            String res = srs.sendQuery(service);
+            String[] split = res.split("/");
+            if (bridgeInst.newServiceSubscribe(this, so.getUID(), split[2].substring(0, split[2].length() - 1))) {
+            }
+
+            service = "SELECT ?serv WHERE { <http://2012/smart-home/prototype#UPnP_PLAY>"
+                    + "<http://2012/smart-home/relation#SERVICE_ID> ?serv . }";
+            res = srs.sendQuery(service);
+            split = res.split("/");
+            if (bridgeInst.newServiceSubscribe(this, so.getUID(), split[2].substring(0, split[2].length() - 1))) {
+            }
+
+        } else if (so.getType().equals(SMART_TYPE.MEDIA_SERVER)) {
+            update.offer("adddevice/device" + so.getUID() + "/media_server.png/" + so.getType());
             data.addDevice(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/media_server.png", "device" + so.getUID()));
-        }else{
-            update.offer("adddevice/device" + so.getUID()+"/unknown.png/"+so.getType());
+        } else {
+            update.offer("adddevice/device" + so.getUID() + "/unknown.png/" + so.getType());
             data.addDevice(new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/unknown.png", "device" + so.getUID()));
         }
     }
@@ -389,11 +417,11 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers, 
     public void smartObjectRemoved(SmartObject so) {
         Device device;
         if (so.getType().equals(SMART_TYPE.DIMMING_LIGHT)) {
-           device = new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/lightOFF.png", "device" + so.getUID());
+            device = new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/lightOFF.png", "device" + so.getUID());
         } else {
-           device = new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/unknown.png", "device" + so.getUID());
+            device = new Device(so.getUID(), so.getName(), so.getBridgeID(), so.getType(), "html/img/unknown.png", "device" + so.getUID());
         }
-        
+
         data.removeMap(device);
         data.removeDevice(device);
         data.removeUserDevice(device);
@@ -417,10 +445,57 @@ public class ControlServlet extends HttpServlet implements DBNotifySubscribers, 
     }
 
     public void serviceNotify(String UDN, String device, String variable, String value) {
-        if(value.contentEquals("0")){
-            update.offer("device" + UDN + "/value/" + "lightOFF.png");
-        }else{
-            update.offer("device" + UDN + "/value/" + "lightON.png");
+        if (variable.contentEquals("Status")) {
+            if (value.contentEquals("0")) {
+                update.offer("device" + UDN + "/value/" + "lightOFF.png");
+            } else {
+                update.offer("device" + UDN + "/value/" + "lightON.png");
+            }
+        } else if(variable.contentEquals("LastChange")){
+           
+            SAXBuilder sxb = new SAXBuilder();
+            try {
+                Document document = sxb.build(new InputSource(new StringReader(value)));
+                Element root = document.getRootElement();
+                List<Element> children = root.getChildren();
+                Iterator<Element> iterator = children.iterator();
+                while (iterator.hasNext()) { //for each instanceID
+                    Element current = iterator.next();
+                    List<Element> childList = current.getChildren();
+                    Iterator<Element> iterChild = childList.iterator();
+                    Element child;
+                    while (iterChild.hasNext()) {
+                        child = iterChild.next();
+                        String attributeValue = child.getAttributeValue("val");
+//                        if (child.getName().equalsIgnoreCase("Volume")) {
+//                            if (child.getAttributeValue("channel").equalsIgnoreCase("Master")) {
+//                                volume = attributeValue;
+//                            }
+//                        } else if (child.getName().equalsIgnoreCase("Mute")) {
+//                            muteState = Boolean.valueOf(attributeValue);
+//                        } else if (child.getName().equalsIgnoreCase("PresetName")) {
+//                            currentPreset = attributeValue;
+//                        } else if (child.getName().equalsIgnoreCase("CurrentTrackDuration")) {
+//                            trackDuration = attributeValue;
+//                        } else if (child.getName().equalsIgnoreCase("AVTransportURI")) {
+//                            String[] split = attributeValue.split("/");
+//                            title = split[split.length - 1];
+/*                        } else*/ if (child.getName().equalsIgnoreCase("TransportState")) {
+                            if (attributeValue.contentEquals("STOPPED")) {
+                                update.offer("device" + UDN + "/value/" + "renderer_stop.png");
+                            } else if (attributeValue.contentEquals("PAUSED_PLAYBACK")) {
+                                update.offer("device" + UDN + "/value/" + "renderer_pause.png");
+                            } else if (attributeValue.contentEquals("PLAYING")) {
+                                update.offer("device" + UDN + "/value/" + "renderer_play.png");
+                            }
+                        }
+                    }
+                }
+            } catch (JDOMException ex) {
+                Logger.getLogger(ControlServlet.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(ControlServlet.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
     private static final long serialVersionUID = -7578840142400570555L;

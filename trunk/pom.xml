@@ -27,6 +27,11 @@
             <artifactId>org.apache.felix.ipojo.annotations</artifactId>
             <version>1.8.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.jdom</groupId>
+            <artifactId>jdom</artifactId>
+            <version>2.0.2</version>
+        </dependency>
     </dependencies>
     
     <build>
@@ -45,14 +50,31 @@
                     <instructions>
                         <Bundle-SymbolicName>Map.Telec.bundle</Bundle-SymbolicName>
                         <Private-Package>
-                            osgi.bundle.control.bundle.*
+                            osgi.bundle.control.bundle.*,
+                            org.jdom2.*
                         </Private-Package>
-                         <Import-Package>
+                        <Import-Package>
                             bundle.osgi.bridge.inter,
                             javax.servlet.*,
                             org.ops4j.pax.web.service,
                             org.osgi.service.http,
-                            org.eclipse.jetty.continuation
+                            org.eclipse.jetty.continuation,
+                            javax.xml.namespace,
+                            javax.xml.stream,
+                            javax.xml.stream.events,
+                            javax.xml.parsers,
+                            javax.xml.stream.util,
+                            javax.xml.transform,
+                            javax.xml.transform.sax,
+                            javax.xml.transform.stream,
+                            javax.xml.validation,
+                            org.jaxen,
+                            org.jaxen.saxpath,
+                            org.jaxen.util,
+                            org.w3c.dom,
+                            org.xml.sax,
+                            org.xml.sax.ext,
+                            org.xml.sax.helpers,
                         </Import-Package>
                         <Export-Package></Export-Package>
                     </instructions>
